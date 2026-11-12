@@ -942,25 +942,7 @@ export default function App() {
         {/* 1A. PARTY LIST */}
         {activeView === 'party' && !activeParty && (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold">Party (Customers & Suppliers)</h2>
-            <div className="bg-white p-4 rounded-2xl shadow-sm flex flex-wrap gap-3">
-              <select value={partyRole} onChange={(e) => setPartyRole(e.target.value)} className="border rounded-lg px-3 py-2">
-                <option value="Customer">Customer</option>
-                <option value="Supplier">Supplier</option>
-              </select>
-              <input type="text" placeholder="Party Name" value={input1} onChange={(e) => setInput1(e.target.value)} className="border rounded-lg px-3 py-2 flex-1" />
-              <input type="text" placeholder="Phone (e.g. 03001234567)" value={partyPhone} onChange={(e) => setPartyPhone(e.target.value)} className="border rounded-lg px-3 py-2 w-48" />
-              <button
-                onClick={() => {
-                  if (!input1) return;
-                  updateParties([...parties, { id: Date.now(), name: input1, phone: partyPhone, type: partyRole, entries: [] }]);
-                  setInput1(''); setPartyPhone('');
-                }}
-                className="bg-[#E85D2A] text-white px-5 py-2 rounded-lg font-semibold flex items-center gap-1"
-              >
-                <Plus size={18} /> Add Party
-              </button>
-            </div>
+            
             {/* 1A. PARTY LIST (DigiKhata Mobile App Layout & CSS) */}
             {!selectedPartyId && (() => {
               const filteredParties = parties.filter((p) => {
