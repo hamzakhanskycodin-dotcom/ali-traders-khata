@@ -132,7 +132,7 @@ export default function App() {
   const [calcResult, setCalcResult] = useState(0);
 
   const saveToDisk = (updated) => {
-    fetch('http://localhost:3001/data', {
+    fetch('/api/khata', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -158,7 +158,7 @@ export default function App() {
   useEffect(() => {
     const loadSharedData = async () => {
       try {
-        const res = await fetch('http://localhost:3001/data');
+        const res = await fetch('/api/khata');
         const data = await res.json();
         if (data) {
           if (data.parties) setParties(data.parties);
@@ -498,6 +498,32 @@ export default function App() {
       ...sheetGridData,
       [monthKey]: {
         ...(sheetGridData[monthKey] || {}),
+        [custName]: {  // Add New Customer Row to 30 Days Sheet
+  const handleAddSheetCustomer = () => {
+    const name = prompt('Enter New Customer Name:');
+    if (!name || !name.trim()) return;
+    const updatedList = [...sheetCustomers, name.trim()];
+    setSheetCustomers(updatedList);
+    localStorage.setItem('dk_sheet_customers', JSON.stringify(updatedList));
+    saveToDisk({ sheetCustomers: updatedList });
+  };
+
+  // Delete Customer Row from 30 Days Sheet
+  const handleDeleteSheetCustomer = (custName) => {
+    if (!window.confirm(`Kya aap "${custName}" ko sheet se hatana chahte hain?`)) return;
+    const updatedList = sheetCustomers.filter(c => c !== custName);
+    setSheetCustomers(updatedList);
+    localStorage.setItem('dk_sheet_customers', JSON.stringify(updatedList));
+    saveToDisk({ sheetCustomers: updatedList });
+  };
+
+  // Update Any Cell in 30 Days Customers Sheet
+  const updateSheetCell = (monthKey, custName, dayNum, val) => {
+    const numVal = val === '' ? 0 : Number(val);
+    const updated = {
+      ...sheetGridData,
+      [monthKey]: {
+        ...(sheetGridData[monthKey] || {}),
         [custName]: {
           ...((sheetGridData[monthKey] || {})[custName] || {}),
           [dayNum]: isNaN(numVal) ? 0 : numVal,
@@ -508,6 +534,17 @@ export default function App() {
     localStorage.setItem('dk_sheet_grid', JSON.stringify(updated));
     saveToDisk({ sheetGridData: updated });
   };
+
+          ...((sheetGridData[monthKey] || {})[custName] || {}),
+          [dayNum]: isNaN(numVal) ? 0 : numVal,
+        },
+      },
+    };
+    setSheetGridData(updated);
+    localStorage.setItem('dk_sheet_grid', JSON.stringify(updated));
+    saveToDisk({ sheetGridData: updated });
+  };
+
 
   const getPartyBalance = (party) => {
     return (party.entries || []).reduce((sum, e) => {
