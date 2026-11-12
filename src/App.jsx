@@ -1134,9 +1134,17 @@ export default function App() {
             })()}
 
             {/* 1B. PARTY LEDGER DETAIL (Digikhata App Layout & CSS - Picture 1) */}
-            {activeView === 'party' && activeParty && (() => {
-              const partyNet = getPartyBalance(activeParty);
-              const filteredEntries = (activeParty.entries || []).filter((en) =>
+           {activeView === 'party' && activeParty && (() => {
+  const partyNet = getPartyBalance(activeParty);
+  const sendWhatsAppReminder = () => {
+    const absBal = Math.abs(partyNet).toLocaleString();
+    const statusText = partyNet > 0 ? `aap ke zimme Rs. ${absBal} baqaya hain` : `aap ke Rs. ${absBal} jama hain`;
+    const msg = `Assalam-o-Alaikum ${activeParty.name}, ${currentBiz} ki taraf se yaad-dihani: ${statusText}.`;
+    const cleanPhone = (activeParty.phone || '').replace(/[^0-9]/g, '');
+    const url = cleanPhone ? `https://wa.me{cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me{encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  };
+  const filteredEntries = (activeParty.entries || []).filter((en) =>
 
                 (en.note || '').toLowerCase().includes(entrySearch.toLowerCase()) ||
                 (en.date || '').toLowerCase().includes(entrySearch.toLowerCase()) ||
