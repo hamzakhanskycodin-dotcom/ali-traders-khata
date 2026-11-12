@@ -510,16 +510,6 @@ export default function App() {
     saveToDisk({ sheetGridData: updated });
   };
 
-          ...((sheetGridData[monthKey] || {})[custName] || {}),
-          [dayNum]: isNaN(numVal) ? 0 : numVal,
-        },
-      },
-    };
-    setSheetGridData(updated);
-    localStorage.setItem('dk_sheet_grid', JSON.stringify(updated));
-    saveToDisk({ sheetGridData: updated });
-  };
-
 
   const getPartyBalance = (party) => {
     return (party.entries || []).reduce((sum, e) => {
