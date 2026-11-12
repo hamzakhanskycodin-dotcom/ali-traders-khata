@@ -12,6 +12,11 @@ export default function App() {
   const [showBizMenu, setShowBizMenu] = useState(false);
   const [activeView, setActiveView] = useState('home');
   const [hideBalance, setHideBalance] = useState(false);
+  // DigiKhata Party List UI Filter States (CSS Layout Only)
+  const [partyTab, setPartyTab] = useState('All'); // 'Customer', 'Supplier', 'All'
+  const [partySearch, setPartySearch] = useState('');
+  const [showAddPartyBox, setShowAddPartyBox] = useState(false);
+
   // Cash Book Upgrade States
   const [cashDate, setCashDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [editingCashId, setEditingCashId] = useState(null);
@@ -956,69 +961,192 @@ export default function App() {
                 <Plus size={18} /> Add Party
               </button>
             </div>
-            {/* DigiKhata Summary Card (Hide Balance + You Will Give / Get) */}
-            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <div className="flex justify-between items-center mb-3">
-                <button
-                  onClick={() => setHideBalance(!hideBalance)}
-                  className="text-xs font-bold text-[#E85D2A] hover:underline"
-                >
-                  {hideBalance ? 'Show Balance' : 'Hide Balance'}
-                </button>
-              </div>
+            {/* 1A. PARTY LIST (DigiKhata Mobile App Layout & CSS) */}
+            {!selectedPartyId && (() => {
+              const filteredParties = parties.filter((p) => {
+                const matchTab = partyTab === 'All' ? true : p.type === partyTab;
+                const matchSearch = p.name.toLowerCase().includes(partySearch.toLowerCase()) || (p.phone || '').includes(partySearch);
+                return matchTab && matchSearch;
+              });
 
-              <div className="grid grid-cols-2 items-center divide-x divide-gray-200">
-                <div className="text-center pr-3">
-                  <p className="text-xl sm:text-2xl font-bold text-green-600">
-                    {hideBalance ? 'Rs ******' : `Rs ${totalPay.toLocaleString()}`}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">You will give</p>
-                </div>
+              return (
+                <div className="relative pb-20 -mx-4 -mt-6 sm:mx-0 sm:mt-0">
+                  {/* Top Orange Header + Tabs */}
+                  <div className="bg-gradient-to-r from-[#E85D2A] to-[#F27A3F] text-white px-4 pt-4 pb-14 sm:rounded-t-3xl">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => setActiveView('home')} className="p-1 hover:bg-white/20 rounded-full">
+                          <ArrowLeft size={22} />
+                        </button>
+                        <h2 className="text-xl font-bold tracking-wide">Party</h2>
+                      </div>
+                      <span className="bg-black/75 text-white text-xs font-bold px-3.5 py-1.5 rounded-full">
+                        {currentBiz}
+                      </span>
+                    </div>
 
-                <div
-                  onClick={() => setActiveView('dashboard')}
-                  className="text-center pl-3 flex items-center justify-center gap-3 cursor-pointer group"
-                >
-                  <div>
-                    <p className="text-xl sm:text-2xl font-bold text-red-600">
-                      {hideBalance ? 'Rs ******' : `Rs ${totalCollect.toLocaleString()}`}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">You will get</p>
+                    {/* Filter Tabs: Customers | Suppliers | All */}
+                    <div className="flex items-center gap-6 text-sm font-semibold">
+                      {[
+                        { key: 'Customer', label: 'Customers' },
+                        { key: 'Supplier', label: 'Suppliers' },
+                        { key: 'All', label: 'All' },
+                      ].map((tab) => (
+                        <button
+                          key={tab.key}
+                          onClick={() => setPartyTab(tab.key)}
+                          className={`pb-2 transition border-b-[3px] ${partyTab === tab.key
+                              ? 'border-amber-300 text-white font-bold'
+                              : 'border-transparent text-white/80 hover:text-white'
+                            }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <span className="text-[#E85D2A] font-bold text-lg group-hover:translate-x-1 transition">
-                    &gt;
-                  </span>
-                </div>
-              </div>
-            </div>
 
+                  {/* Overlapping White Summary Card (Hide Balance + Give / Get) */}
+                  <div className="px-3 -mt-10">
+                    <div className="bg-white rounded-2xl p-4 shadow-md border border-gray-100">
+                      <div className="flex justify-between items-center mb-2">
+                        <button
+                          onClick={() => setHideBalance(!hideBalance)}
+                          className="text-xs font-bold text-[#E85D2A] hover:underline"
+                        >
+                          {hideBalance ? 'Show Balance' : 'Hide Balance'}
+                        </button>
+                      </div>
 
-            <div className="bg-white rounded-2xl shadow-sm divide-y">
-              {parties.map((p) => {
-                const bal = getPartyBalance(p);
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => setSelectedPartyId(p.id)}
-                    className="p-4 flex justify-between items-center cursor-pointer hover:bg-orange-50/50 transition"
+                      <div className="grid grid-cols-2 items-center divide-x divide-gray-200">
+                        <div className="text-center pr-2">
+                          <p className="text-xl sm:text-2xl font-extrabold text-green-600">
+                            {hideBalance ? 'Rs ******' : `Rs ${totalPay.toLocaleString()}`}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">You will give</p>
+                        </div>
+
+                        <div
+                          onClick={() => setActiveView('dashboard')}
+                          className="text-center pl-2 flex items-center justify-center gap-3 cursor-pointer"
+                        >
+                          <div>
+                            <p className="text-xl sm:text-2xl font-extrabold text-red-600">
+                              {hideBalance ? 'Rs ******' : `Rs ${totalCollect.toLocaleString()}`}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-0.5">You will get</p>
+                          </div>
+                          <span className="text-[#E85D2A] font-bold text-lg">&gt;</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Search Input + PDF/Print Icon Row */}
+                  <div className="px-3 mt-3.5 flex items-center gap-2.5">
+                    <div className="flex-1 bg-white border border-gray-200 rounded-full px-4 py-2.5 flex items-center gap-2 shadow-xs">
+                      <span className="text-gray-400 text-sm">🔍</span>
+                      <input
+                        type="text"
+                        placeholder={`${filteredParties.length} ${partyTab === 'All' ? 'Parties' : partyTab + 's'}`}
+                        value={partySearch}
+                        onChange={(e) => setPartySearch(e.target.value)}
+                        className="w-full text-sm bg-transparent focus:outline-none text-gray-700"
+                      />
+                    </div>
+                    <button
+                      onClick={() => window.print()}
+                      title="Print / PDF"
+                      className="p-2.5 bg-white border border-gray-200 rounded-xl text-[#E85D2A] hover:bg-orange-50 shadow-xs"
+                    >
+                      <Printer size={18} />
+                    </button>
+                  </div>
+
+                  {/* Add Customer Popup Box (Triggered by Bottom Floating Button) */}
+                  {showAddPartyBox && (
+                    <div className="px-3 mt-3">
+                      <div className="bg-white p-4 rounded-2xl shadow-md border border-orange-200 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-bold text-[#E85D2A]">Add New {partyRole}</span>
+                          <button onClick={() => setShowAddPartyBox(false)} className="text-xs text-gray-400 font-bold">✕</button>
+                        </div>
+                        <div className="flex flex-wrap gap-2.5">
+                          <select value={partyRole} onChange={(e) => setPartyRole(e.target.value)} className="border rounded-xl px-3 py-2 bg-gray-50 text-sm font-medium">
+                            <option value="Customer">Customer</option>
+                            <option value="Supplier">Supplier</option>
+                          </select>
+                          <input type="text" placeholder="Party Name" value={input1} onChange={(e) => setInput1(e.target.value)} className="border rounded-xl px-3 py-2 flex-1 min-w-[150px] text-sm" />
+                          <input type="tel" placeholder="Phone (e.g. 030012345)" value={partyPhone} onChange={(e) => setPartyPhone(e.target.value)} className="border rounded-xl px-3 py-2 w-44 text-sm" />
+                          <button
+                            onClick={() => {
+                              if (!input1) return;
+                              updateParties([...parties, { id: Date.now(), name: input1, phone: partyPhone, type: partyRole, entries: [] }]);
+                              setInput1('');
+                              setPartyPhone('');
+                              setShowAddPartyBox(false);
+                            }}
+                            className="bg-[#E85D2A] text-white px-5 py-2 rounded-xl font-bold text-sm"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Parties List with Circular Initials Avatars (Exact Match to Picture 2) */}
+                  <div className="mt-3 bg-white divide-y divide-gray-100 border-t border-b border-gray-100">
+                    {filteredParties.length === 0 ? (
+                      <p className="p-8 text-center text-gray-400 text-sm">Koi customer ya supplier nahi mila.</p>
+                    ) : (
+                      filteredParties.map((p) => {
+                        const bal = getPartyBalance(p);
+                        const initials = p.name.trim().split(' ').map(w => w).join('').slice(0, 2).toUpperCase();
+                        const lastDate = p.entries && p.entries.length > 0 ? p.entries.date : p.type;
+
+                        return (
+                          <div
+                            key={p.id}
+                            onClick={() => setSelectedPartyId(p.id)}
+                            className="px-4 py-3.5 flex items-center justify-between hover:bg-orange-50/40 cursor-pointer transition"
+                          >
+                            <div className="flex items-center gap-3.5 min-w-0">
+                              <div className="w-11 h-11 rounded-full bg-[#FDF2EC] text-[#E85D2A] font-extrabold text-sm flex items-center justify-center shrink-0 border border-orange-100">
+                                {initials}
+                              </div>
+                              <div className="truncate">
+                                <p className="font-bold text-gray-900 text-base truncate">{p.name}</p>
+                                <p className="text-xs text-gray-400 mt-0.5 truncate">{lastDate}</p>
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0 ml-2">
+                              <p className={`font-extrabold text-base ${bal > 0 ? 'text-red-600' : bal < 0 ? 'text-green-600' : 'text-gray-800'}`}>
+                                {hideBalance ? 'Rs ***' : `Rs ${Math.abs(bal).toLocaleString()}`}
+                              </p>
+                              {bal !== 0 && (
+                                <p className="text-[11px] text-gray-400">
+                                  {bal > 0 ? "You'll Get" : "You'll Give"}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Floating Bottom-Right "+ ADD CUSTOMER" Pill Button */}
+                  <button
+                    onClick={() => setShowAddPartyBox(!showAddPartyBox)}
+                    className="fixed bottom-5 right-5 z-30 bg-[#E85D2A] hover:bg-[#d44e1d] text-white px-5 py-3.5 rounded-full font-bold text-sm shadow-lg flex items-center gap-2 active:scale-95 transition print:hidden"
                   >
-                    <div>
-                      <p className="font-bold text-gray-900">{p.name}</p>
-                      <span className="text-xs bg-[#FDF6F0] text-[#E85D2A] px-2 py-0.5 rounded font-medium">{p.type}</span>
-                      <span className="text-xs text-gray-400 ml-2">Click to view khata →</span>
-                    </div>
-                    <div className="text-right">
-                      <p className={`font-bold text-lg ${bal >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        Rs. {Math.abs(bal).toLocaleString()}
-                      </p>
-                      <p className={`text-xs font-medium ${bal >= 0 ? 'text-red-500' : 'text-green-600'}`}>
-                        {bal >= 0 ? 'You Will Get' : 'You Will Give'}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    <Plus size={18} strokeWidth={2.5} /> ADD CUSTOMER
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         )}
 
