@@ -446,7 +446,7 @@ export default function App() {
     cashEntries.forEach((c) => {
       csv += `"${c.date || 'Today'}","${c.desc}","${c.type === 'IN' ? 'Cash In' : 'Cash Out'}",${c.amt}\n`;
     });
-  
+
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a');
@@ -491,7 +491,7 @@ export default function App() {
     saveToDisk({ sheetCustomers: updatedList });
   };
 
- 
+
   // Update Any Cell in 30 Days Customers Sheet
   const updateSheetCell = (monthKey, custName, dayNum, val) => {
     const numVal = val === '' ? 0 : Number(val);
@@ -887,19 +887,24 @@ export default function App() {
             </div>
 
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
-                {khataCards.map((item) => {
-                  const Icon = item.icon;
+              <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
+                {khataCards.map((card) => {
+                  const Icon = card.icon;
                   return (
-                    <button key={item.id} onClick={() => setActiveView(item.id)} className="flex flex-col items-center justify-center p-4 rounded-2xl bg-[#FDF6F0] hover:bg-[#FCECE0] transition group">
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-[#E85D2A] group-hover:scale-110 transition">
-                        <Icon size={28} strokeWidth={2.2} />
-                      </div>
-                      <span className="mt-2 font-semibold text-gray-700 text-sm">{item.label}</span>
+                    <button
+                      key={card.id}
+                      onClick={() => setActiveView(card.id)}
+                      className="bg-[#FDF6F0] hover:bg-[#FCECE0] transition rounded-2xl py-5 px-2 sm:py-7 sm:px-4 flex flex-col items-center justify-center gap-2 sm:gap-3 border border-orange-100/80"
+                    >
+                      <Icon className="text-[#E85D2A]" size={26} strokeWidth={1.8} />
+                      <span className="font-semibold text-gray-800 text-xs sm:text-sm text-center leading-tight">
+                        {card.label}
+                      </span>
                     </button>
                   );
                 })}
               </div>
+
             </div>
           </div>
         )}
