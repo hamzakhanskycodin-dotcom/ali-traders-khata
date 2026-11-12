@@ -491,32 +491,7 @@ export default function App() {
     saveToDisk({ sheetCustomers: updatedList });
   };
 
-  // Update Any Cell in 30 Days Customers Sheet
-  const updateSheetCell = (monthKey, custName, dayNum, val) => {
-    const numVal = val === '' ? 0 : Number(val);
-    const updated = {
-      ...sheetGridData,
-      [monthKey]: {
-        ...(sheetGridData[monthKey] || {}),
-        [custName]: {  // Add New Customer Row to 30 Days Sheet
-  const handleAddSheetCustomer = () => {
-    const name = prompt('Enter New Customer Name:');
-    if (!name || !name.trim()) return;
-    const updatedList = [...sheetCustomers, name.trim()];
-    setSheetCustomers(updatedList);
-    localStorage.setItem('dk_sheet_customers', JSON.stringify(updatedList));
-    saveToDisk({ sheetCustomers: updatedList });
-  };
-
-  // Delete Customer Row from 30 Days Sheet
-  const handleDeleteSheetCustomer = (custName) => {
-    if (!window.confirm(`Kya aap "${custName}" ko sheet se hatana chahte hain?`)) return;
-    const updatedList = sheetCustomers.filter(c => c !== custName);
-    setSheetCustomers(updatedList);
-    localStorage.setItem('dk_sheet_customers', JSON.stringify(updatedList));
-    saveToDisk({ sheetCustomers: updatedList });
-  };
-
+ 
   // Update Any Cell in 30 Days Customers Sheet
   const updateSheetCell = (monthKey, custName, dayNum, val) => {
     const numVal = val === '' ? 0 : Number(val);
