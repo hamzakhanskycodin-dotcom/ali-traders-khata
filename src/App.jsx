@@ -1133,10 +1133,11 @@ export default function App() {
               );
             })()}
 
-
-            {/* 1B. PARTY LEDGER DETAIL (DigiKhata App Layout & CSS - Picture 1) */}
+            {/* 1B. PARTY LEDGER DETAIL (Digikhata App Layout & CSS - Picture 1) */}
             {activeView === 'party' && activeParty && (() => {
+              const partyNet = getPartyBalance(activeParty);
               const filteredEntries = (activeParty.entries || []).filter((en) =>
+
                 (en.note || '').toLowerCase().includes(entrySearch.toLowerCase()) ||
                 (en.date || '').toLowerCase().includes(entrySearch.toLowerCase()) ||
                 String(en.amt).includes(entrySearch)
