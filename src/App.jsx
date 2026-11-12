@@ -887,20 +887,17 @@ export default function App() {
             </div>
 
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <div className="grid grid-cols-3 gap-3 sm:gap-4">
+              <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
                 {khataCards.map((card) => {
                   const Icon = card.icon;
                   return (
                     <button
                       key={card.id}
                       onClick={() => setActiveView(card.id)}
-                      className="aspect-square bg-[#FDF7F2] hover:bg-[#FCECE0] active:scale-95 transition rounded-3xl p-3 flex flex-col items-center justify-center gap-2.5 border border-[#F5DFD0]"
+                      className="bg-[#FDF6F0] hover:bg-[#FCECE0] transition rounded-2xl py-5 px-2 sm:py-7 sm:px-4 flex flex-col items-center justify-center gap-2 sm:gap-3 border border-orange-100/80"
                     >
-                      <div className="relative flex items-center justify-center">
-                        <div className="w-10 h-10 rounded-xl bg-[#FF6600]/15 translate-x-1 -translate-y-0.5 absolute" />
-                        <Icon className="text-[#FF6600] relative z-10" size={32} strokeWidth={2.2} />
-                      </div>
-                      <span className="font-semibold text-[#3D2C24] text-xs sm:text-sm text-center leading-tight">
+                      <Icon className="text-[#E85D2A]" size={26} strokeWidth={1.8} />
+                      <span className="font-semibold text-gray-800 text-xs sm:text-sm text-center leading-tight">
                         {card.label}
                       </span>
                     </button>
