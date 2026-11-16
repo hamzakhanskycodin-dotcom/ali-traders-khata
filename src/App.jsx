@@ -197,15 +197,21 @@ export default function App() {
     setAuthError('');
     setAuthLoading(true);
     try {
+      const cleanPhone = authEmail.replace(/[^0-9]/g, '');
+      if (cleanPhone.length < 10) {
+        throw new Error('Sahih mobile number darj karein (e.g. 03703917066)');
+      }
+      const phoneLoginId = `${cleanPhone}@khata.app`;
+
       if (authMode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email: authEmail, password: authPassword });
+        const { error } = await supabase.auth.signUp({ email: phoneLoginId, password: authPassword });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
+        const { error } = await supabase.auth.signInWithPassword({ email: phoneLoginId, password: authPassword });
         if (error) throw error;
       }
     } catch (err) {
-      setAuthError(err.message || 'Authentication failed');
+      setAuthError(err.message || 'Login ya Sign Up fail ho gaya');
     } finally {
       setAuthLoading(false);
     }
@@ -996,16 +1002,17 @@ export default function App() {
 
           <form onSubmit={handleAuthSubmit} className="space-y-3">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Email Address</label>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Mobile Number</label>
               <input
-                type="email"
+                type="tel"
                 required
-                placeholder="example@gmail.com"
+                placeholder="03703917066"
                 value={authEmail}
                 onChange={(e) => setAuthEmail(e.target.value)}
-                className="w-full border rounded-xl px-3.5 py-2.5 text-sm focus:border-[#E85D2A] focus:outline-none"
+                className="w-full border rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:border-[#E85D2A] focus:outline-none"
               />
             </div>
+
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">Password</label>
               <input
