@@ -171,7 +171,7 @@ export default function App() {
           .from('user_khata_data')
           .select('data')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
         if (data?.data) applyCloudData(data.data);
       }
       setAuthLoading(false);
@@ -184,7 +184,7 @@ export default function App() {
           .from('user_khata_data')
           .select('data')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
         if (data?.data) applyCloudData(data.data);
       }
     });

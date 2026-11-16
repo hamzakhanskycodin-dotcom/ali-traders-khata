@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/supa/:path*",
+      "destination": "https://supabase.co*"
+    }
+  ]
+}
