@@ -1181,6 +1181,30 @@ export default function App() {
                 setShowItemPicker(false);
                 setEntryModal(type);
               };
+              const handleKeypadPress = (key) => {
+                const curr = String(entryAmt || '');
+                if (key === 'C') {
+                  setEntryAmt('');
+                  return;
+                }
+                if (key === 'BACK') {
+                  setEntryAmt(curr.slice(0, -1));
+                  return;
+                }
+                if (key === '=') {
+                  try {
+                    const sanitized = curr.replace(/[^0-9+\-*/.%]/g, '').replace(/%/g, '/100');
+                    if (!sanitized) return;
+                    const result = Function(`"use strict"; return (${sanitized})`)();
+                    if (isFinite(result)) {
+                      setEntryAmt(String(Math.round(result * 100) / 100));
+                    }
+                  } catch (_) { }
+                  return;
+                }
+                setEntryAmt(curr + key);
+              };
+
 
 
 
