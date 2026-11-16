@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.alitraders.khata",
+    "sha256_cert_fingerprints": ["F9:BA:72:63:92:CE:CA:23:9E:A3:EE:88:57:CB:63:2C:DD:21:61:C5:08:A4:2A:DF:F5:10:36:80:A8:42:20:7B"]
+  }
+}]
