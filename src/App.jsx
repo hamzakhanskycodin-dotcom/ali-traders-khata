@@ -1793,33 +1793,36 @@ export default function App() {
                   <span className="text-xs bg-orange-100 text-[#E85D2A] font-bold px-3 py-1 rounded-full">Total Staff: {staffList.length}</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-[#E85D2A]">
-                    <p className="text-xs text-gray-500">Total Monthly Salary</p>
-                    <p className="text-2xl font-bold text-[#E85D2A] mt-0.5">Rs. {totalMonthlyPayroll.toLocaleString()}</p>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border-l-4 border-[#E85D2A]">
+                    <p className="text-[11px] sm:text-xs text-gray-500 leading-tight">Monthly Salary</p>
+                    <p className="text-base sm:text-xl font-bold text-[#E85D2A] mt-0.5 truncate">Rs. {totalMonthlySalary.toLocaleString()}</p>
                   </div>
-                  <div className="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-green-500">
-                    <p className="text-xs text-gray-500">Total Salary Paid</p>
-                    <p className="text-2xl font-bold text-green-600 mt-0.5">Rs. {totalPaidAll.toLocaleString()}</p>
+                  <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border-l-4 border-green-500">
+                    <p className="text-[11px] sm:text-xs text-gray-500 leading-tight">Total Paid</p>
+                    <p className="text-base sm:text-xl font-bold text-green-600 mt-0.5 truncate">Rs. {totalPaidSalary.toLocaleString()}</p>
                   </div>
                 </div>
 
-                <form onSubmit={handleSaveStaff} className="bg-white p-4 rounded-2xl shadow-sm space-y-3">
+                <form onSubmit={handleSaveStaff} className="bg-white p-3 rounded-2xl shadow-sm space-y-2">
                   {editingStaffId && (
                     <div className="flex justify-between items-center text-xs font-bold text-blue-600">
                       <span>Editing Staff Details...</span>
                       <button type="button" onClick={() => { setEditingStaffId(null); setStaffNameInput(''); setStaffRoleInput(''); setStaffSalaryInput(''); }} className="underline">Cancel Edit</button>
                     </div>
                   )}
-                  <div className="flex flex-wrap gap-3">
-                    <input type="text" required placeholder="Staff Name" value={staffNameInput} onChange={(e) => setStaffNameInput(e.target.value)} className="border rounded-xl px-3 py-2.5 flex-1 min-w-[160px] text-sm" />
-                    <input type="text" placeholder="Role" value={staffRoleInput} onChange={(e) => setStaffRoleInput(e.target.value)} className="border rounded-xl px-3 py-2.5 w-40 text-sm" />
-                    <input type="number" required placeholder="Monthly Salary (Rs)" value={staffSalaryInput} onChange={(e) => setStaffSalaryInput(e.target.value)} className="border rounded-xl px-3 py-2.5 w-44 text-sm font-bold" />
-                    <button type="submit" className="bg-[#E85D2A] hover:bg-[#d44e1d] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1">
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" placeholder="Staff Name" value={staffNameInput} onChange={(e) => setStaffNameInput(e.target.value)} className="border rounded-lg px-2.5 py-1.5 text-sm w-full" />
+                    <input type="text" placeholder="Role" value={staffRoleInput} onChange={(e) => setStaffRoleInput(e.target.value)} className="border rounded-lg px-2.5 py-1.5 text-sm w-full" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="number" placeholder="Monthly Salary (Rs)" value={staffSalaryInput} onChange={(e) => setStaffSalaryInput(e.target.value)} className="border rounded-lg px-2.5 py-1.5 text-sm font-bold w-full" />
+                    <button type="submit" className="bg-[#E85D2A] hover:bg-[#d44e1d] text-white py-1.5 px-3 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1 w-full">
                       <Plus size={16} /> {editingStaffId ? 'Update Staff' : 'Add Staff'}
                     </button>
                   </div>
                 </form>
+
 
                 {/* Pay Salary / Advance Box */}
                 {payingStaffId && (() => {
