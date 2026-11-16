@@ -2432,15 +2432,16 @@ export default function App() {
   </span>
 </div>
 
-{/* 8 Color-Coded Live Total Cards (Ultra Compact) */}
-<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2.5">
+{/* 8 Color-Coded Live Total Cards (4 Boxes in Row 2, 4 Boxes in Row 3) */}
+<div className="grid grid-cols-4 gap-1 sm:gap-2.5">
   {summaryCards.map((card) => (
-    <div key={card.title} className={`${card.bg} text-white rounded-lg py-1.5 px-2.5 shadow-sm`}>
-      <p className="text-[10px] sm:text-xs font-medium opacity-90 leading-none truncate">{card.title}</p>
-      <p className="text-sm sm:text-xl font-bold mt-1 leading-none truncate">{card.value}</p>
+    <div key={card.title} className={`${card.bg} text-white rounded-lg py-1.5 px-1.5 sm:px-3 shadow-sm`}>
+      <p className="text-[9px] sm:text-xs font-medium opacity-90 leading-tight truncate">{card.title}</p>
+      <p className="text-xs sm:text-xl font-bold mt-0.5 leading-none truncate">{card.value}</p>
     </div>
   ))}
 </div>
+
 
 
                 </div>
