@@ -2588,20 +2588,19 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Scrollable Grid Table (Customer Name + D1..D31 + Row Total) */}
                 <div className="overflow-x-auto border border-gray-300 rounded-xl max-h-[72vh]">
-                  <table className="w-full text-xs text-center border-collapse">
+                  <table className="w-full text-[11px] sm:text-xs text-center border-collapse">
                     <thead className="sticky top-0 z-20 bg-[#1F2937] text-white font-bold">
                       <tr>
-                        <th className="py-3 px-3.5 text-left border-r border-gray-600 sticky left-0 z-30 bg-[#1F2937] min-w-[165px]">
+                        <th className="py-2 px-2 sm:py-3 sm:px-3.5 text-left border-r border-gray-600 sticky left-0 z-30 bg-[#1F2937] min-w-[105px] max-w-[115px] sm:min-w-[165px] sm:max-w-none truncate">
                           Customer Name
                         </th>
                         {daysArray.map((d) => (
-                          <th key={d} className="py-3 px-2 border-r border-gray-600 min-w-[46px]">
+                          <th key={d} className="py-2 px-0.5 sm:py-3 sm:px-2 border-r border-gray-600 min-w-[34px] sm:min-w-[46px]">
                             D{d}
                           </th>
                         ))}
-                        <th className="py-3 px-3 bg-[#111827] text-amber-300 min-w-[65px]">
+                        <th className="py-2 px-1.5 sm:py-3 sm:px-3 bg-[#111827] text-amber-300 min-w-[48px] sm:min-w-[65px]">
                           TOTAL
                         </th>
                       </tr>
@@ -2613,35 +2612,37 @@ export default function App() {
                         return (
                           <tr key={cust} className="hover:bg-orange-50/40 group">
                             {/* Dark Charcoal Sticky Customer Name Cell */}
-                            <td className="py-2 px-3 text-left font-bold text-white bg-[#1F2937] border-r border-gray-600 sticky left-0 z-10 flex items-center justify-between gap-2">
-                              <span className="truncate">{cust}</span>
-                              <button
-                                onClick={() => handleDeleteSheetCustomer(cust)}
-                                title="Remove Customer"
-                                className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-[10px] print:hidden"
-                              >
-                                ✕
-                              </button>
+                            <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-left font-bold text-white bg-[#1F2937] border-r border-gray-600 sticky left-0 z-10 min-w-[105px] max-w-[115px] sm:min-w-[165px] sm:max-w-none">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="truncate">{cust}</span>
+                                <button
+                                  onClick={() => handleDeleteSheetCustomer(cust)}
+                                  title="Remove Customer"
+                                  className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-[10px] shrink-0 print:hidden"
+                                >
+                                  ✕
+                                </button>
+                              </div>
                             </td>
 
                             {/* D1 to D31 Editable Number Boxes */}
                             {daysArray.map((d) => {
                               const val = currentSheetData[cust]?.[d] ?? 0;
                               return (
-                                <td key={d} className="border-r border-gray-200 p-1 bg-gray-50/50">
+                                <td key={d} className="border-r border-gray-200 p-0.5 bg-gray-50/50">
                                   <input
                                     type="number"
                                     value={val === 0 ? '' : val}
                                     placeholder="0"
                                     onChange={(e) => updateSheetCell(monthKey, cust, d, e.target.value)}
-                                    className={`w-10 text-center py-1 rounded border border-gray-200 bg-white focus:border-[#E85D2A] focus:outline-none ${val > 0 ? 'font-bold text-gray-900' : 'text-gray-400'}`}
+                                    className={`w-7 sm:w-10 text-center py-0.5 sm:py-1 rounded border border-gray-200 bg-white focus:border-[#E85D2A] focus:outline-none text-[11px] sm:text-xs ${val > 0 ? 'font-bold text-gray-900' : 'text-gray-400'}`}
                                   />
                                 </td>
                               );
                             })}
 
                             {/* Row Total for this Customer */}
-                            <td className="py-2 px-2.5 font-extrabold text-[#E85D2A] bg-[#FDF6F0]">
+                            <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-extrabold text-[#E85D2A] bg-[#FDF6F0]">
                               {rowTotal}
                             </td>
                           </tr>
@@ -2652,21 +2653,22 @@ export default function App() {
                     {/* Sticky Bottom Row: Daily Totals */}
                     <tfoot className="sticky bottom-0 z-20 bg-[#1F2937] text-white font-extrabold border-t-2 border-gray-500">
                       <tr>
-                        <td className="py-2.5 px-3.5 text-left border-r border-gray-600 sticky left-0 z-30 bg-[#1F2937]">
+                        <td className="py-2 px-2 sm:py-2.5 sm:px-3.5 text-left border-r border-gray-600 sticky left-0 z-30 bg-[#1F2937] min-w-[105px] max-w-[115px] sm:min-w-[165px] sm:max-w-none">
                           DAILY TOTAL
                         </td>
                         {daysArray.map((d) => (
-                          <td key={d} className="py-2.5 px-1.5 border-r border-gray-600 text-amber-300">
+                          <td key={d} className="py-2 px-0.5 sm:py-2.5 sm:px-1.5 border-r border-gray-600 text-amber-300">
                             {dayTotals[d]}
                           </td>
                         ))}
-                        <td className="py-2.5 px-3 bg-[#15803D] text-white">
+                        <td className="py-2 px-1.5 sm:py-2.5 sm:px-3 bg-[#15803D] text-white">
                           {grandSheetTotal}
                         </td>
                       </tr>
                     </tfoot>
                   </table>
                 </div>
+
               </div>
             );
           })()
