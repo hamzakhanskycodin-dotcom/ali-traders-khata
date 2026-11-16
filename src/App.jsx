@@ -2398,22 +2398,23 @@ export default function App() {
               colTotals[c.key] = daysArray.reduce((sum, d) => sum + (Number(currentMonthData[d]?.[c.key]) || 0), 0);
             });
 
-            // Summary Cards Configuration (Exact Match to Picture 2)
+            // Summary Cards Configuration (All 9 Cards in 3x3 Grid)
             const summaryCards = [
+              { title: 'Total Supply', value: colTotals.totalSupply.toLocaleString(), bg: 'bg-[#0284C7]' },
               { title: 'Total Counter Sales', value: `Rs. ${colTotals.counterSale.toLocaleString()}`, bg: 'bg-[#15803D]' },
               { title: 'Hamza Supplier Total', value: colTotals.hamzaSupplier.toLocaleString(), bg: 'bg-[#4338CA]' },
               { title: 'Arsalan Bhai Total', value: colTotals.arsalanBhai.toLocaleString(), bg: 'bg-[#38BDF8]' },
               { title: 'Makkah Plant Total', value: colTotals.makkahPlant.toLocaleString(), bg: 'bg-[#F43F5E]' },
               { title: 'Jutt Plant Total', value: colTotals.juttPlant.toLocaleString(), bg: 'bg-[#FACC15]' },
-              { title: 'Total Borrowed Bottles', value: colTotals.borrowBottles.toLocaleString(), bg: 'bg-[#DC2626]' },
+              { title: 'Borrowed Bottles', value: colTotals.borrowBottles.toLocaleString(), bg: 'bg-[#DC2626]' },
               { title: 'Fuel Exp. Total', value: `Rs. ${colTotals.fuelExp.toLocaleString()}`, bg: 'bg-[#6B7280]' },
               { title: 'Other Exp. Total', value: `Rs. ${colTotals.otherExp.toLocaleString()}`, bg: 'bg-[#1F2937]' },
             ];
 
             return (
-              <div className="space-y-5">
-                {/* TOP SECTION: ANALYTICS & PROGRESS SUMMARY (Exact Match to Picture 2) */}
-                <div className="space-y-3">
+              <div className="space-y-4">
+                {/* TOP SECTION: ANALYTICS & PROGRESS SUMMARY */}
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-extrabold text-gray-800">Analytics &amp; Progress Summary</h2>
                     <button
@@ -2424,27 +2425,21 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Full-Width Royal Blue Grand Total Banner */}
-                  <div className="bg-[#0284C7] text-white rounded-lg py-1.5 px-3 flex items-center justify-between shadow-sm">
-                    <span className="text-[11px] sm:text-xs font-semibold opacity-95">Total Supply (Grand Total)</span>
-                    <span className="text-base sm:text-2xl font-extrabold">
-                      {colTotals.totalSupply.toLocaleString()}
-                    </span>
-                  </div>
-
-                  {/* 8 Color-Coded Live Total Cards (4 Boxes in Row 2, 4 Boxes in Row 3) */}
-                  <div className="grid grid-cols-4 gap-1 sm:gap-2.5">
+                  {/* 9 Color-Coded Live Total Cards (3 Rows x 3 Columns) */}
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
                     {summaryCards.map((card) => (
-                      <div key={card.title} className={`${card.bg} text-white rounded-lg py-1.5 px-1.5 sm:px-3 shadow-sm`}>
-                        <p className="text-[9px] sm:text-xs font-medium opacity-90 leading-tight truncate">{card.title}</p>
-                        <p className="text-xs sm:text-xl font-bold mt-0.5 leading-none truncate">{card.value}</p>
+                      <div key={card.title} className={`${card.bg} text-white rounded-lg py-1.5 px-2 sm:py-2.5 sm:px-3 shadow-sm`}>
+                        <p className="text-[10px] sm:text-xs font-medium opacity-90 leading-tight truncate">{card.title}</p>
+                        <p className="text-sm sm:text-xl font-bold mt-0.5 leading-none truncate">{card.value}</p>
                       </div>
                     ))}
                   </div>
-
-
-
                 </div>
+
+
+
+
+
 
                 {/* BOTTOM SECTION: MONTHLY LOG CHART TABLE */}
                 <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-5 border border-gray-200 space-y-4">
