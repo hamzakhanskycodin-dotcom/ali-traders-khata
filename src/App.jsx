@@ -1173,6 +1173,15 @@ export default function App() {
                 );
                 setIsEditingParty(false);
               };
+              const openNewEntryModal = (type) => {
+                setEditingEntryId(null);
+                setEntryAmt('');
+                setEntryNote('');
+                setEntryDate(new Date().toISOString().split('T')[0]);
+                setShowItemPicker(false);
+                setEntryModal(type);
+              };
+
 
 
 
