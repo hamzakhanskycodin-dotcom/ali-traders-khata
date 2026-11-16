@@ -1097,13 +1097,12 @@ export default function App() {
                 <button onClick={() => { const name = prompt('Enter New Business Name:'); if (name) { setBusinesses([...businesses, name]); setCurrentBiz(name); } setShowBizMenu(false); }} className="w-full text-left px-4 py-2 text-sm text-[#E85D2A] font-semibold border-t mt-1">
                   + Add New Business
                 </button>
+
                 <div className="border-t mt-1 pt-1.5 px-4 pb-1">
                   <p className="text-[10px] text-gray-400 truncate">{session.user.email.replace('@khata.app', '')} • {syncStatus}</p>
-
                   <button
                     onClick={() => supabase.auth.signOut()}
-                    className="w-full text-left text-xs font-bold text-red-600 hover:bg-red-50 py-1.5 px-2 rounded-lg mt-1"
-                  >
+                    className="w-full text-left text-xs font-bold text-red-600 hover:bg-red-50 py-1.5 px-2 rounded-lg mt-1">
                     Logout Account
                   </button>
                 </div>
@@ -1116,9 +1115,9 @@ export default function App() {
           {activeView !== 'home' && (
             <button
               onClick={() => {
-                S
-                if (selectedPartyId) { setSelectedPartyId(null); setShowReport(false); setIsEditingParty(false); }
-                else { setActiveView('home'); setInput1(''); setInput2(''); }
+                setActiveView('home');
+                setInput1('');
+                setInput2('');
               }}
               className="flex items-center gap-1 text-sm font-semibold text-[#E85D2A] bg-orange-50 px-3 py-1.5 rounded-lg"
             >
