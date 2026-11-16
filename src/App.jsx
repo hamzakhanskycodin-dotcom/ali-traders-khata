@@ -199,7 +199,7 @@ export default function App() {
     try {
       const cleanPhone = authEmail.replace(/[^0-9]/g, '');
       if (cleanPhone.length < 10) {
-        throw new Error('Sahih mobile number darj karein (e.g. 03703917066)');
+        throw new Error('Sahih mobile number darj karein (e.g. 037........)');
       }
       const phoneLoginId = `${cleanPhone}@khata.app`;
 
