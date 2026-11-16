@@ -1708,27 +1708,28 @@ export default function App() {
                 </div>
 
 
-                <div className="bg-white p-4 rounded-2xl shadow-sm space-y-3 print:hidden">
+                <div className="bg-white p-3 rounded-2xl shadow-sm space-y-2 print:hidden">
                   {editingCashId && (
                     <div className="flex justify-between items-center text-xs font-bold text-blue-600">
                       <span>Editing Cash Entry...</span>
                       <button onClick={() => { setEditingCashId(null); setInput1(''); setInput2(''); }} className="underline">Cancel Edit</button>
                     </div>
                   )}
-                  <div className="flex flex-wrap gap-3">
-                    <input type="text" placeholder="Cash Description" value={input1} onChange={(e) => setInput1(e.target.value)} className="border rounded-xl px-3 py-2.5 flex-1 min-w-[180px]" />
-                    <input type="number" placeholder="Amount (Rs)" value={input2} onChange={(e) => setInput2(e.target.value)} className="border rounded-xl px-3 py-2.5 w-36 font-bold" />
-                    <input type="date" value={cashDate} onChange={(e) => setCashDate(e.target.value)} className="border rounded-xl px-3 py-2.5 text-sm" />
+                  <div className="flex flex-wrap gap-2">
+                    <input type="text" placeholder="Cash Description" value={input1} onChange={(e) => setInput1(e.target.value)} className="border rounded-lg px-2.5 py-1.5 text-sm flex-1 min-w-[180px]" />
+                    <input type="number" placeholder="Amount (Rs)" value={input2} onChange={(e) => setInput2(e.target.value)} className="border rounded-lg px-2.5 py-1.5 text-sm w-32 font-bold" />
+                    <input type="date" value={cashDate} onChange={(e) => setCashDate(e.target.value)} className="border rounded-lg px-2.5 py-1.5 text-xs" />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button onClick={() => handleSaveCash('IN')} className="bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-bold">
-                      {editingCashId ? 'Update as Cash In (+)' : 'CASH IN (+)'}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={() => handleSaveCash('IN')} className="bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg text-xs sm:text-sm font-bold">
+                      {editingCashId ? 'Update Cash In (+)' : 'CASH IN (+)'}
                     </button>
-                    <button onClick={() => handleSaveCash('OUT')} className="bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl font-bold">
-                      {editingCashId ? 'Update as Cash Out (-)' : 'CASH OUT (-)'}
+                    <button onClick={() => handleSaveCash('OUT')} className="bg-red-600 hover:bg-red-700 text-white py-1.5 rounded-lg text-xs sm:text-sm font-bold">
+                      {editingCashId ? 'Update Cash Out (-)' : 'CASH OUT (-)'}
                     </button>
                   </div>
                 </div>
+
 
                 <div className="bg-white p-3.5 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-3 border border-orange-100">
                   <div className="flex flex-wrap items-center gap-2 print:hidden">
