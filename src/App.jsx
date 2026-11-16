@@ -2425,22 +2425,23 @@ export default function App() {
                   </div>
 
                   {/* Full-Width Royal Blue Grand Total Banner */}
-                  <div className="bg-[#0284C7] text-white rounded-xl py-4 px-5 text-center shadow-sm">
-                    <p className="text-xs font-semibold opacity-90">Total Supply (Grand Total)</p>
-                    <p className="text-2xl sm:text-3xl font-extrabold mt-0.5">
+                  <div className="bg-[#0284C7] text-white rounded-xl py-2.5 px-3 text-center shadow-sm">
+                    <p className="text-[11px] sm:text-xs font-semibold opacity-90">Total Supply (Grand Total)</p>
+                    <p className="text-xl sm:text-3xl font-extrabold mt-0.5">
                       {colTotals.totalSupply.toLocaleString()}
                     </p>
                   </div>
 
                   {/* 8 Color-Coded Live Total Cards (2 Columns Grid) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                     {summaryCards.map((card) => (
-                      <div key={card.title} className={`${card.bg} text-white rounded-xl py-3.5 px-5 shadow-sm`}>
-                        <p className="text-xs font-semibold opacity-90">{card.title}</p>
-                        <p className="text-xl sm:text-2xl font-extrabold mt-0.5">{card.value}</p>
+                      <div key={card.title} className={`${card.bg} text-white rounded-xl py-2 px-3 shadow-sm`}>
+                        <p className="text-[11px] sm:text-xs font-semibold opacity-90 leading-tight truncate">{card.title}</p>
+                        <p className="text-base sm:text-2xl font-extrabold mt-0.5 truncate">{card.value}</p>
                       </div>
                     ))}
                   </div>
+
                 </div>
 
                 {/* BOTTOM SECTION: MONTHLY LOG CHART TABLE */}
