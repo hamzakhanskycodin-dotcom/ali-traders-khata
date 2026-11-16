@@ -1063,16 +1063,43 @@ export default function App() {
             {showBizMenu && (
               <div className="absolute top-11 left-8 bg-white border rounded-xl shadow-lg w-56 py-2 z-30">
                 {businesses.map((biz) => (
-                  <button key={biz} onClick={() => { setCurrentBiz(biz); setShowBizMenu(false); }} className="w-full text-left px-4 py-2 hover:bg-orange-50 flex items-center gap-2 font-medium">
-                    <Store size={16} className="text-[#E85D2A]" />
-                    <span>{biz}</span>
-                  </button>
+                  <div
+                    key={biz}
+                    className={`flex items-center justify-between px-4 py-2 hover:bg-orange-50 ${currentBiz === biz ? 'font-extrabold text-[#E85D2A] bg-orange-50/40' : 'text-gray-700 font-medium'
+                      }`}
+                  >
+                    <button
+                      onClick={() => { setCurrentBiz(biz); setShowBizMenu(false); }}
+                      className="flex items-center gap-2 flex-1 text-left truncate"
+                    >
+                      <Store size={16} className="text-[#E85D2A] shrink-0" />
+                      <span className="truncate">{biz}</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const newName = prompt('Edit Business Name:', biz);
+                        if (newName && newName.trim() && newName.trim() !== biz) {
+                          const updatedList = businesses.map((b) => (b === biz ? newName.trim() : b));
+                          setBusinesses(updatedList);
+                          if (currentBiz === biz) setCurrentBiz(newName.trim());
+                          saveToDisk({ businesses: updatedList, currentBiz: newName.trim() });
+                        }
+                        setShowBizMenu(false);
+                      }}
+                      title="Edit Business Name"
+                      className="p-1 text-gray-400 hover:text-[#E85D2A] rounded shrink-0"
+                    >
+                      <Edit2 size={14} />
+                    </button>
+                  </div>
                 ))}
                 <button onClick={() => { const name = prompt('Enter New Business Name:'); if (name) { setBusinesses([...businesses, name]); setCurrentBiz(name); } setShowBizMenu(false); }} className="w-full text-left px-4 py-2 text-sm text-[#E85D2A] font-semibold border-t mt-1">
                   + Add New Business
                 </button>
                 <div className="border-t mt-1 pt-1.5 px-4 pb-1">
-                  <p className="text-[10px] text-gray-400 truncate">{session.user.email} • {syncStatus}</p>
+                  <p className="text-[10px] text-gray-400 truncate">{session.user.email.replace('@khata.app', '')} • {syncStatus}</p>
+
                   <button
                     onClick={() => supabase.auth.signOut()}
                     className="w-full text-left text-xs font-bold text-red-600 hover:bg-red-50 py-1.5 px-2 rounded-lg mt-1"
