@@ -1175,6 +1175,19 @@ export default function App() {
 
 
               };
+              const handleUpdateParty = (e) => {
+                if (e && e.preventDefault) e.preventDefault();
+                if (!editPartyName.trim()) return;
+                setParties((prev) =>
+                  prev.map((p) =>
+                    p.id === activeParty.id
+                      ? { ...p, name: editPartyName.trim(), phone: editPartyPhone.trim() }
+                      : p
+                  )
+                );
+                setIsEditingParty(false);
+              };
+
 
               const filteredEntries = (activeParty.entries || []).filter((en) =>
 
