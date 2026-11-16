@@ -1782,7 +1782,7 @@ export default function App() {
 
         {/* 4. STAFF MODULE */}
         {
-          { activeView === 'staff' && (() => {
+          activeView === 'staff' && (() => {
             const totalMonthlySalary = (staffList || []).reduce((sum, s) => sum + Number(s.salary || 0), 0);
             const totalPaidSalary = (staffList || []).reduce((sum, s) => sum + Number(s.paid || 0), 0);
 
