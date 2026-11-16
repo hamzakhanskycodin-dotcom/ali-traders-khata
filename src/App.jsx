@@ -275,7 +275,7 @@ export default function App() {
         ]
       };
     });
-    
+
 
     const updatedCashList = deductFromCash
       ? [
@@ -292,29 +292,29 @@ export default function App() {
     setPayAmount('');
     setPayNote('');
   };
-   const handleKeypadPress = (key) => {
-                const curr = String(entryAmt || '');
-                if (key === 'C') {
-                  setEntryAmt('');
-                  return;
-                }
-                if (key === 'BACK') {
-                  setEntryAmt(curr.slice(0, -1));
-                  return;
-                }
-                if (key === '=') {
-                  try {
-                    const sanitized = curr.replace(/[^0-9+\-*/.%]/g, '').replace(/%/g, '/100');
-                    if (!sanitized) return;
-                    const result = Function(`"use strict"; return (${sanitized})`)();
-                    if (isFinite(result)) {
-                      setEntryAmt(String(Math.round(result * 100) / 100));
-                    }
-                  } catch (_) { }
-                  return;
-                }
-                setEntryAmt(curr + key);
-              };
+  const handleKeypadPress = (key) => {
+    const curr = String(entryAmt || '');
+    if (key === 'C') {
+      setEntryAmt('');
+      return;
+    }
+    if (key === 'BACK') {
+      setEntryAmt(curr.slice(0, -1));
+      return;
+    }
+    if (key === '=') {
+      try {
+        const sanitized = curr.replace(/[^0-9+\-*/.%]/g, '').replace(/%/g, '/100');
+        if (!sanitized) return;
+        const result = Function(`"use strict"; return (${sanitized})`)();
+        if (isFinite(result)) {
+          setEntryAmt(String(Math.round(result * 100) / 100));
+        }
+      } catch (_) { }
+      return;
+    }
+    setEntryAmt(curr + key);
+  };
 
 
 
@@ -1205,7 +1205,7 @@ export default function App() {
                 setShowItemPicker(false);
                 setEntryModal(type);
               };
-             
+
 
 
 
@@ -1447,7 +1447,7 @@ export default function App() {
                               </div>
                               <div className="flex items-center justify-between mt-1.5">
                                 <span className="inline-block bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded">
-                                  Bal. Rs {Math.abs(en.runningBal).toLocaleString()}
+                                  Bal. Rs {Math.abs(Number(en.runningBal || 0)).toLocaleString()}
                                 </span>
                                 <div className="flex items-center gap-1.5 print:hidden">
                                   <button onClick={() => startEditEntry(en)} title="Edit" className="text-blue-500 hover:text-blue-700 p-0.5">
@@ -1462,13 +1462,14 @@ export default function App() {
 
                             {/* Middle Column: You Gave (Soft Red Tinted Column) */}
                             <div className="col-span-3 bg-red-50/60 flex items-center justify-center px-1 font-extrabold text-red-600 text-sm">
-                              {en.type === 'GAVE' ? en.amt.toLocaleString() : ''}
+                              {en.type === 'GAVE' ? Number(en.amt || 0).toLocaleString() : ''}
                             </div>
 
                             {/* Right Column: You Got */}
                             <div className="col-span-3 flex items-center justify-end px-3 font-extrabold text-green-600 text-sm">
-                              {en.type === 'GOT' ? en.amt.toLocaleString() : ''}
+                              {en.type === 'GOT' ? Number(en.amt || 0).toLocaleString() : ''}
                             </div>
+
                           </div>
                         ))}
                       </div>
@@ -1996,7 +1997,8 @@ export default function App() {
                               <div key={pay.id} className="flex justify-between items-center text-gray-700 border-b border-gray-100 pb-1 last:border-0 last:pb-0">
                                 <span><strong>{pay.date}</strong> — {pay.note}</span>
                                 <div className="flex items-center gap-2">
-                                  <span className="font-bold text-green-600">Rs. {pay.amt.toLocaleString()}</span>
+                                  <span className="font-bold text-green-600">Rs. {Number(pay.amt || 0).toLocaleString()}</span>
+
                                   <button
                                     onClick={() => deleteStaffPayment(s.id, pay.id)}
                                     title="Delete Payment Entry"
