@@ -1159,7 +1159,7 @@ export default function App() {
             {/* 1B. PARTY LEDGER DETAIL (Digikhata App Layout & CSS - Picture 1) */}
             {activeView === 'party' && activeParty && (() => {
               const partyNet = getPartyBalance(activeParty);
-                const sendWhatsAppReminder = () => sendWhatsAppCard(activeParty);
+              const sendWhatsAppReminder = () => sendWhatsAppCard(activeParty);
 
               const handleUpdateParty = (e) => {
                 if (e && e.preventDefault) e.preventDefault();
@@ -1198,48 +1198,51 @@ export default function App() {
                 <div className="pb-24 -mx-4 -mt-6 sm:mx-0 sm:mt-0 space-y-3">
                   {/* Top DigiKhata Header + Net Balance Card */}
                   <div className="bg-gradient-to-b from-[#E85D2A] to-[#F27A3F] text-white px-4 pt-4 pb-5 sm:rounded-t-3xl space-y-3.5 shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
                         <button
                           onClick={() => { setSelectedPartyId(null); setShowReport(false); setIsEditingParty(false); setEntrySearch(''); }}
-                          className="p-1 hover:bg-white/20 rounded-full shrink-0"
+                          className="p-1.5 hover:bg-white/20 rounded-full shrink-0"
                         >
-                          <ArrowLeft size={22} />
+                          <ArrowLeft size={20} />
                         </button>
                         <div
                           onClick={() => { setIsEditingParty(!isEditingParty); setEditPartyName(activeParty.name); setEditPartyPhone(activeParty.phone || ''); }}
-                          className="cursor-pointer truncate"
+                          className="cursor-pointer min-w-0 flex-1"
                         >
-                          <div className="flex items-center gap-2">
-                            <h2 className="text-lg sm:text-xl font-extrabold truncate">{activeParty.name}</h2>
-                            <span className="text-[11px] bg-white/20 text-white font-bold px-2 py-0.5 rounded-md shrink-0">
+                          <div className="flex items-center gap-1.5">
+                            <h2 className="text-base sm:text-xl font-extrabold truncate">{activeParty.name}</h2>
+                            <span className="text-[10px] bg-white/20 text-white font-bold px-1.5 py-0.5 rounded-md shrink-0">
                               {activeParty.type}
                             </span>
                           </div>
-                          <p className="text-xs text-white/80">Click here to view settings</p>
+                          <p className="text-[11px] text-white/80 truncate">
+                            {activeParty.phone || 'Click here to view settings'}
+                          </p>
                         </div>
                       </div>
 
-                      {/* Phone Call & Edit/Delete Icons */}
-                      <div className="flex items-center gap-2 shrink-0">
+                      {/* Phone Call & Edit Icons */}
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {activeParty.phone && (
                           <a
                             href={`tel:${activeParty.phone}`}
                             title="Call Customer"
-                            className="p-2 bg-white/15 hover:bg-white/25 rounded-full text-xs font-bold"
+                            className="p-2 bg-white/15 hover:bg-white/25 rounded-full flex items-center justify-center"
                           >
-                            Call
+                            <svg xmlns="http://w3.org" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
                           </a>
                         )}
                         <button
                           onClick={() => { setIsEditingParty(!isEditingParty); setEditPartyName(activeParty.name); setEditPartyPhone(activeParty.phone || ''); }}
-                          className="p-2 bg-white/15 hover:bg-white/25 rounded-full text-xs font-bold"
+                          title="Edit Party"
+                          className="p-2 bg-white/15 hover:bg-white/25 rounded-full flex items-center justify-center"
                         >
-                          Edit
+                          <svg xmlns="http://w3.org" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
                         </button>
-
                       </div>
                     </div>
+
 
                     {/* Party Settings Box (Edit Name/Phone or Delete Party) */}
                     {isEditingParty && (
