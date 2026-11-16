@@ -1205,6 +1205,8 @@ export default function App() {
                 setShowItemPicker(false);
                 setEntryModal(type);
               };
+              const handleDeleteEntry = (entryId) => deleteEntry(entryId);
+
 
 
 
