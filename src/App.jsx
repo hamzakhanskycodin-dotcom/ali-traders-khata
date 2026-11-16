@@ -199,7 +199,7 @@ export default function App() {
     try {
       const cleanPhone = authEmail.replace(/[^0-9]/g, '');
       if (cleanPhone.length < 10) {
-        throw new Error('Sahih mobile number darj karein (e.g. 037........)');
+        throw new Error('Put the correct number (e.g. 037........)');
       }
       const phoneLoginId = `${cleanPhone}@khata.app`;
 
@@ -211,7 +211,7 @@ export default function App() {
         if (error) throw error;
       }
     } catch (err) {
-      setAuthError(err.message || 'Login ya Sign Up fail ho gaya');
+      setAuthError(err.message || 'Login failed');
     } finally {
       setAuthLoading(false);
     }
@@ -988,9 +988,9 @@ export default function App() {
             <div className="w-14 h-14 bg-[#E85D2A] text-white rounded-2xl flex items-center justify-center text-2xl font-extrabold mx-auto shadow-md">
               AK
             </div>
-            <h1 className="text-xl font-extrabold text-gray-900 pt-2">Ali Traders Khata</h1>
+            <h1 className="text-xl font-extrabold text-gray-900 pt-2">Hamza's Khata App</h1>
             <p className="text-xs text-gray-500">
-              {authMode === 'login' ? 'Apne account mein login karein' : 'Naya online khata account banayein'}
+              {authMode === 'login' ? 'Login to Your Old Account' : 'Create a New Online Khata Account'}
             </p>
           </div>
 
@@ -1019,7 +1019,7 @@ export default function App() {
                 type="password"
                 required
                 minLength={6}
-                placeholder="Kam az kam 6 huroof"
+                placeholder="Atleast 6 characters"
                 value={authPassword}
                 onChange={(e) => setAuthPassword(e.target.value)}
                 className="w-full border rounded-xl px-3.5 py-2.5 text-sm focus:border-[#E85D2A] focus:outline-none"
@@ -1029,7 +1029,7 @@ export default function App() {
               type="submit"
               className="w-full bg-[#E85D2A] hover:bg-[#d44e1d] text-white py-3 rounded-xl font-extrabold text-sm shadow-md transition"
             >
-              {authMode === 'login' ? 'Login Karein' : 'Account Banayein (Sign Up)'}
+              {authMode === 'login' ? 'Login' : 'Account Banayein (Sign Up)'}
             </button>
           </form>
 
@@ -1039,7 +1039,7 @@ export default function App() {
               onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setAuthError(''); }}
               className="text-xs font-bold text-[#E85D2A] hover:underline"
             >
-              {authMode === 'login' ? 'Naya account banana hai? Sign Up karein' : 'Pehle se account hai? Login karein'}
+              {authMode === 'login' ? 'For New Account and Sign Up' : 'Already have a Account? Login Here'}
             </button>
           </div>
         </div>
