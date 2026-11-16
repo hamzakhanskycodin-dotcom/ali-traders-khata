@@ -1159,22 +1159,8 @@ export default function App() {
             {/* 1B. PARTY LEDGER DETAIL (Digikhata App Layout & CSS - Picture 1) */}
             {activeView === 'party' && activeParty && (() => {
               const partyNet = getPartyBalance(activeParty);
-              const sendWhatsAppReminder = () => {
-                const absBal = Math.abs(partyNet).toLocaleString();
-                const statusText = partyNet > 0 ? `aap ke zimme Rs. ${absBal} baqaya hain` : `aap ke Rs. ${absBal} jama hain`;
-                const msg = `Assalam-o-Alaikum ${activeParty.name}, ${currentBiz} ki taraf se yaad-dihani: ${statusText}.`;
-                let cleanPhone = (activeParty.phone || '').replace(/[^0-9]/g, '');
-                if (cleanPhone.startsWith('0')) {
-                  cleanPhone = '92' + cleanPhone.slice(1);
-                }
-                const url = cleanPhone
-                  ? 'https://wa.me/' + cleanPhone + '?text=' + encodeURIComponent(msg)
-                  : 'https://wa.me?text=' + encodeURIComponent(msg);
+                const sendWhatsAppReminder = () => sendWhatsAppCard(activeParty);
 
-                window.open(url, '_blank');
-
-
-              };
               const handleUpdateParty = (e) => {
                 if (e && e.preventDefault) e.preventDefault();
                 if (!editPartyName.trim()) return;
