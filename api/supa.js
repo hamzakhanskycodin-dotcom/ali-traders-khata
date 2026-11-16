@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     if (key !== 'path') queryParams.append(key, val);
   }
   const qs = queryParams.toString();
-  const targetUrl = 'https://tzkjogakzxozqhwybpxz.supabase.co' + path + (qs ? '?' + qs : '');
+  const targetUrl = 'https://tzkjogakzxozqhwybpxz.supabase.co';
 
   try {
     const headers = {
