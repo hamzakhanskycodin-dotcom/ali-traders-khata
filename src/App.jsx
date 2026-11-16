@@ -2424,23 +2424,23 @@ export default function App() {
                     </button>
                   </div>
 
-                 {/* Full-Width Royal Blue Grand Total Banner */}
-<div className="bg-[#0284C7] text-white rounded-lg py-1.5 px-3 flex items-center justify-between shadow-sm">
-  <span className="text-[11px] sm:text-xs font-semibold opacity-95">Total Supply (Grand Total)</span>
-  <span className="text-base sm:text-2xl font-extrabold">
-    {colTotals.totalSupply.toLocaleString()}
-  </span>
-</div>
+                  {/* Full-Width Royal Blue Grand Total Banner */}
+                  <div className="bg-[#0284C7] text-white rounded-lg py-1.5 px-3 flex items-center justify-between shadow-sm">
+                    <span className="text-[11px] sm:text-xs font-semibold opacity-95">Total Supply (Grand Total)</span>
+                    <span className="text-base sm:text-2xl font-extrabold">
+                      {colTotals.totalSupply.toLocaleString()}
+                    </span>
+                  </div>
 
-{/* 8 Color-Coded Live Total Cards (4 Boxes in Row 2, 4 Boxes in Row 3) */}
-<div className="grid grid-cols-4 gap-1 sm:gap-2.5">
-  {summaryCards.map((card) => (
-    <div key={card.title} className={`${card.bg} text-white rounded-lg py-1.5 px-1.5 sm:px-3 shadow-sm`}>
-      <p className="text-[9px] sm:text-xs font-medium opacity-90 leading-tight truncate">{card.title}</p>
-      <p className="text-xs sm:text-xl font-bold mt-0.5 leading-none truncate">{card.value}</p>
-    </div>
-  ))}
-</div>
+                  {/* 8 Color-Coded Live Total Cards (4 Boxes in Row 2, 4 Boxes in Row 3) */}
+                  <div className="grid grid-cols-4 gap-1 sm:gap-2.5">
+                    {summaryCards.map((card) => (
+                      <div key={card.title} className={`${card.bg} text-white rounded-lg py-1.5 px-1.5 sm:px-3 shadow-sm`}>
+                        <p className="text-[9px] sm:text-xs font-medium opacity-90 leading-tight truncate">{card.title}</p>
+                        <p className="text-xs sm:text-xl font-bold mt-0.5 leading-none truncate">{card.value}</p>
+                      </div>
+                    ))}
+                  </div>
 
 
 
@@ -2466,14 +2466,13 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Table */}
                   <div className="overflow-x-auto border border-gray-200 rounded-xl max-h-[70vh]">
-                    <table className="w-full text-xs text-center border-collapse min-w-[900px]">
+                    <table className="w-full text-[10px] sm:text-xs text-center border-collapse min-w-[540px] sm:min-w-[900px]">
                       <thead className="sticky top-0 z-10 text-white font-bold uppercase">
                         <tr>
-                          <th className="bg-[#1F2937] py-3 px-3 border-r border-gray-600 sticky left-0 z-20">DATE</th>
+                          <th className="bg-[#1F2937] py-2 px-1.5 sm:py-3 sm:px-3 border-r border-gray-600 sticky left-0 z-20 whitespace-nowrap">DATE</th>
                           {columns.map((col) => (
-                            <th key={col.key} className={`${col.bg} py-3 px-2.5 border-r border-white/20 leading-tight`}>
+                            <th key={col.key} className={`${col.bg} py-2 px-1 sm:py-3 sm:px-2.5 border-r border-white/20 leading-tight min-w-[56px] sm:min-w-[90px]`}>
                               {col.label}
                             </th>
                           ))}
@@ -2484,7 +2483,7 @@ export default function App() {
                           const isToday = isCurrentMonth && day === todayDay;
                           return (
                             <tr key={day} className={isToday ? 'bg-[#FEF9C3]' : 'hover:bg-gray-50'}>
-                              <td className={`py-2 px-3 font-bold text-gray-700 border-r border-gray-200 sticky left-0 ${isToday ? 'bg-[#FEF9C3]' : 'bg-white'}`}>
+                              <td className={`py-1.5 px-1.5 sm:py-2 sm:px-3 font-bold text-gray-700 border-r border-gray-200 sticky left-0 whitespace-nowrap ${isToday ? 'bg-[#FEF9C3]' : 'bg-white'}`}>
                                 Day {day}
                               </td>
                               {columns.map((col) => {
@@ -2496,7 +2495,7 @@ export default function App() {
                                       value={val === 0 ? '' : val}
                                       placeholder="0"
                                       onChange={(e) => updateLogCell(monthKey, day, col.key, e.target.value)}
-                                      className={`w-full text-center py-2 px-1 bg-transparent font-bold focus:bg-orange-50 focus:outline-none ${val > 0 ? col.text : 'text-gray-400 font-normal'}`}
+                                      className={`w-full text-center py-1.5 sm:py-2 px-0.5 sm:px-1 bg-transparent text-xs font-bold focus:bg-orange-50 focus:outline-none ${val > 0 ? col.text : 'text-gray-400 font-normal'}`}
                                     />
                                   </td>
                                 );
@@ -2507,9 +2506,9 @@ export default function App() {
                       </tbody>
                       <tfoot className="sticky bottom-0 bg-gray-100 font-extrabold text-gray-900 border-t-2 border-gray-300">
                         <tr>
-                          <td className="py-2.5 px-3 border-r border-gray-300 sticky left-0 bg-gray-100">TOTAL</td>
+                          <td className="py-2 px-1.5 sm:py-2.5 sm:px-3 border-r border-gray-300 sticky left-0 bg-gray-100">TOTAL</td>
                           {columns.map((col) => (
-                            <td key={col.key} className={`py-2.5 px-2 border-r border-gray-300 ${col.text}`}>
+                            <td key={col.key} className={`py-2 px-1 sm:py-2.5 sm:px-2 border-r border-gray-300 ${col.text}`}>
                               {colTotals[col.key].toLocaleString()}
                             </td>
                           ))}
@@ -2517,6 +2516,7 @@ export default function App() {
                       </tfoot>
                     </table>
                   </div>
+
                 </div>
               </div>
             );
