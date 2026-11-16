@@ -161,6 +161,29 @@ export default function App() {
   const updateBills = (newVal) => { setBills(newVal); saveToDisk({ bills: newVal }); };
   const updateStaff = (newVal) => { setStaffList(newVal); saveToDisk({ staffList: newVal }); };
   const updateExpenses = (newVal) => { setExpenses(newVal); saveToDisk({ expenses: newVal }); };
+  // Mobile Back Button Support (Prevents app from closing on Back press)
+  useEffect(() => {
+    const handleBackButton = () => {
+      if (entryModal) {
+        setEntryModal(null);
+      } else if (selectedPartyId) {
+        setSelectedPartyId(null);
+      } else if (activeView !== 'home') {
+        setActiveView('home');
+      }
+    };
+
+    window.addEventListener('popstate', handleBackButton);
+    return () => window.removeEventListener('popstate', handleBackButton);
+  }, [activeView, selectedPartyId, entryModal]);
+
+  // Push history state when entering any sub-screen, party ledger, or modal
+  useEffect(() => {
+    if (activeView !== 'home' || selectedPartyId || entryModal) {
+      window.history.pushState({ view: activeView, party: selectedPartyId }, '');
+    }
+  }, [activeView, selectedPartyId, entryModal]);
+
 
   useEffect(() => {
     const loadSharedData = async () => {
