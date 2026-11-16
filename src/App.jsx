@@ -1075,23 +1075,45 @@ export default function App() {
                       <Store size={16} className="text-[#E85D2A] shrink-0" />
                       <span className="truncate">{biz}</span>
                     </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const newName = prompt('Edit Business Name:', biz);
-                        if (newName && newName.trim() && newName.trim() !== biz) {
-                          const updatedList = businesses.map((b) => (b === biz ? newName.trim() : b));
-                          setBusinesses(updatedList);
-                          if (currentBiz === biz) setCurrentBiz(newName.trim());
-                          saveToDisk({ businesses: updatedList, currentBiz: newName.trim() });
-                        }
-                        setShowBizMenu(false);
-                      }}
-                      title="Edit Business Name"
-                      className="p-1 text-gray-400 hover:text-[#E85D2A] rounded shrink-0"
-                    >
-                      <Edit2 size={14} />
-                    </button>
+                                          <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newName = prompt('Edit Business Name:', biz);
+                            if (newName && newName.trim() && newName.trim() !== biz) {
+                              const updatedList = businesses.map((b) => (b === biz ? newName.trim() : b));
+                              setBusinesses(updatedList);
+                              if (currentBiz === biz) setCurrentBiz(newName.trim());
+                              saveToDisk({ businesses: updatedList, currentBiz: newName.trim() });
+                            }
+                            setShowBizMenu(false);
+                          }}
+                          title="Edit Business Name"
+                          className="p-1 text-gray-400 hover:text-[#E85D2A] rounded"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+
+                        {businesses.length > 1 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!window.confirm(`Kya aap "${biz}" business delete karna chahte hain?`)) return;
+                              const updatedList = businesses.filter((b) => b !== biz);
+                              setBusinesses(updatedList);
+                              const nextBiz = currentBiz === biz ? updatedList[0] : currentBiz;
+                              setCurrentBiz(nextBiz);
+                              saveToDisk({ businesses: updatedList, currentBiz: nextBiz });
+                              setShowBizMenu(false);
+                            }}
+                            title="Delete Business"
+                            className="p-1 text-gray-400 hover:text-red-600 rounded"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+
                   </div>
                 ))}
                 <button onClick={() => { const name = prompt('Enter New Business Name:'); if (name) { setBusinesses([...businesses, name]); setCurrentBiz(name); } setShowBizMenu(false); }} className="w-full text-left px-4 py-2 text-sm text-[#E85D2A] font-semibold border-t mt-1">
