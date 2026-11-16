@@ -1973,21 +1973,21 @@ export default function App() {
                 </div>
 
                 {/* Expense Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-red-500">
-                    <p className="text-xs text-gray-500">Total Expenses (All Time)</p>
-                    <p className="text-2xl font-bold text-red-600 mt-0.5">Rs. {totalExpense.toLocaleString()}</p>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border-l-4 border-red-500">
+                    <p className="text-[11px] sm:text-xs text-gray-500 leading-tight">Total Expenses</p>
+                    <p className="text-base sm:text-2xl font-bold text-red-600 mt-0.5 truncate">Rs. {totalExpense.toLocaleString()}</p>
                   </div>
-                  <div className="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-amber-500">
-                    <p className="text-xs text-gray-500">
-                      {expFilterMonth === 'ALL' ? 'Showing All Expenses' : `Selected Month (${expFilterMonth})`}
+                  <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border-l-4 border-amber-500">
+                    <p className="text-[11px] sm:text-xs text-gray-500 leading-tight truncate">
+                      {expFilterMonth === 'ALL' ? 'Showing All' : `Month (${expFilterMonth})`}
                     </p>
-                    <p className="text-2xl font-bold text-amber-600 mt-0.5">Rs. {filteredTotal.toLocaleString()}</p>
+                    <p className="text-base sm:text-2xl font-bold text-amber-600 mt-0.5 truncate">Rs. {filteredTotal.toLocaleString()}</p>
                   </div>
                 </div>
 
                 {/* Add / Edit Expense Form */}
-                <form onSubmit={handleSaveExpense} className="bg-white p-4 rounded-2xl shadow-sm space-y-3 print:hidden">
+                <form onSubmit={handleSaveExpense} className="bg-white p-3 rounded-2xl shadow-sm space-y-2 print:hidden">
                   {editingExpId && (
                     <div className="flex justify-between items-center text-xs font-bold text-blue-600">
                       <span>Editing Expense...</span>
@@ -1996,11 +1996,11 @@ export default function App() {
                       </button>
                     </div>
                   )}
-                  <div className="flex flex-wrap gap-3">
+                  <div className="grid grid-cols-2 gap-2">
                     <select
                       value={expCategory}
                       onChange={(e) => setExpCategory(e.target.value)}
-                      className="border rounded-xl px-3 py-2.5 text-sm font-medium bg-gray-50"
+                      className="border rounded-lg px-2 py-1.5 text-xs sm:text-sm font-medium bg-gray-50 w-full"
                     >
                       <option value="Electricity / Bijli">Electricity / Bijli</option>
                       <option value="Rent / Kiraya">Rent / Kiraya</option>
@@ -2009,54 +2009,55 @@ export default function App() {
                       <option value="Repair / Maintenance">Repair / Maintenance</option>
                       <option value="Other">Other</option>
                     </select>
+                    <input
+                      type="date"
+                      value={expDate}
+                      onChange={(e) => setExpDate(e.target.value)}
+                      className="border rounded-lg px-2 py-1.5 text-xs sm:text-sm w-full"
+                    />
+                  </div>
 
+                  <div className="grid grid-cols-2 gap-2">
                     <input
                       type="text"
                       required
-                      placeholder="Expense Detail (e.g., Shop Bijli Bill)"
+                      placeholder="Expense Detail (e.g., Bill)"
                       value={input1}
                       onChange={(e) => setInput1(e.target.value)}
-                      className="border rounded-xl px-3 py-2.5 flex-1 min-w-[160px] text-sm"
+                      className="border rounded-lg px-2.5 py-1.5 text-xs sm:text-sm w-full"
                     />
-
                     <input
                       type="number"
                       required
                       placeholder="Amount (Rs)"
                       value={input2}
                       onChange={(e) => setInput2(e.target.value)}
-                      className="border rounded-xl px-3 py-2.5 w-36 text-sm font-bold"
-                    />
-
-                    <input
-                      type="date"
-                      value={expDate}
-                      onChange={(e) => setExpDate(e.target.value)}
-                      className="border rounded-xl px-3 py-2.5 text-sm"
+                      className="border rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-bold w-full"
                     />
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                  <div className="flex items-center justify-between gap-2 pt-0.5">
                     {!editingExpId ? (
-                      <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 cursor-pointer">
+                      <label className="flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold text-gray-600 cursor-pointer leading-tight">
                         <input
                           type="checkbox"
                           checked={expDeductCash}
                           onChange={(e) => setExpDeductCash(e.target.checked)}
-                          className="accent-[#E85D2A] w-4 h-4"
+                          className="accent-[#E85D2A] w-3.5 h-3.5 shrink-0"
                         />
-                        <span>Cash Book (Galla) se bhi minus karein</span>
+                        <span>Galla se minus karein</span>
                       </label>
                     ) : <span />}
 
                     <button
                       type="submit"
-                      className="bg-[#E85D2A] hover:bg-[#d44e1d] text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1"
+                      className="bg-[#E85D2A] hover:bg-[#d44e1d] text-white px-4 py-1.5 rounded-lg font-bold text-xs sm:text-sm flex items-center gap-1 shrink-0"
                     >
-                      <Plus size={16} /> {editingExpId ? 'Update Expense' : 'Add Expense'}
+                      <Plus size={15} /> {editingExpId ? 'Update' : 'Add Expense'}
                     </button>
                   </div>
                 </form>
+
 
                 {/* Monthly Report Filter Bar */}
                 <div className="bg-white p-3.5 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-3 border border-orange-100 print:hidden">
