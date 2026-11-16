@@ -1168,9 +1168,11 @@ export default function App() {
                   cleanPhone = '92' + cleanPhone.slice(1);
                 }
                 const url = cleanPhone
-                  ? 'https:/wa.me' + cleanPhone + '?text=' + encodeURIComponent(msg)
-                  : 'https:/wa.me?text=' + encodeURIComponent(msg);
+                  ? 'https://wa.me' + cleanPhone + '?text=' + encodeURIComponent(msg)
+                  : 'https://wa.me?text=' + encodeURIComponent(msg);
+
                 window.open(url, '_blank');
+
 
               };
 
