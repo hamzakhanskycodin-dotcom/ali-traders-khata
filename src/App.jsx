@@ -1134,17 +1134,17 @@ export default function App() {
             })()}
 
             {/* 1B. PARTY LEDGER DETAIL (Digikhata App Layout & CSS - Picture 1) */}
-           {activeView === 'party' && activeParty && (() => {
-  const partyNet = getPartyBalance(activeParty);
-  const sendWhatsAppReminder = () => {
-    const absBal = Math.abs(partyNet).toLocaleString();
-    const statusText = partyNet > 0 ? `aap ke zimme Rs. ${absBal} baqaya hain` : `aap ke Rs. ${absBal} jama hain`;
-    const msg = `Assalam-o-Alaikum ${activeParty.name}, ${currentBiz} ki taraf se yaad-dihani: ${statusText}.`;
-    const cleanPhone = (activeParty.phone || '').replace(/[^0-9]/g, '');
-    const url = cleanPhone ? `https://wa.me{cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me{encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
-  };
-  const filteredEntries = (activeParty.entries || []).filter((en) =>
+            {activeView === 'party' && activeParty && (() => {
+              const partyNet = getPartyBalance(activeParty);
+              const sendWhatsAppReminder = () => {
+                const absBal = Math.abs(partyNet).toLocaleString();
+                const statusText = partyNet > 0 ? `aap ke zimme Rs. ${absBal} baqaya hain` : `aap ke Rs. ${absBal} jama hain`;
+                const msg = `Assalam-o-Alaikum ${activeParty.name}, ${currentBiz} ki taraf se yaad-dihani: ${statusText}.`;
+                const cleanPhone = (activeParty.phone || '').replace(/[^0-9]/g, '');
+                const url = cleanPhone ? `https://wa.me{cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me{encodeURIComponent(msg)}`;
+                window.open(url, '_blank');
+              };
+              const filteredEntries = (activeParty.entries || []).filter((en) =>
 
                 (en.note || '').toLowerCase().includes(entrySearch.toLowerCase()) ||
                 (en.date || '').toLowerCase().includes(entrySearch.toLowerCase()) ||
@@ -1692,20 +1692,21 @@ export default function App() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-[#E85D2A]">
-                    <p className="text-xs text-gray-500">Total Cash in Hand (Galla)</p>
-                    <p className="text-2xl font-bold text-[#E85D2A] mt-0.5">Rs. {cashInHand.toLocaleString()}</p>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border-l-4 border-[#E85D2A]">
+                    <p className="text-[10px] sm:text-xs text-gray-500 leading-tight">Cash in Hand</p>
+                    <p className="text-sm sm:text-2xl font-bold text-[#E85D2A] mt-1 truncate">Rs. {cashInHand.toLocaleString()}</p>
                   </div>
-                  <div className="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-green-500">
-                    <p className="text-xs text-gray-500">Today's Cash In (+)</p>
-                    <p className="text-xl font-bold text-green-600 mt-0.5">Rs. {todayIn.toLocaleString()}</p>
+                  <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border-l-4 border-green-500">
+                    <p className="text-[10px] sm:text-xs text-gray-500 leading-tight">Today In (+)</p>
+                    <p className="text-sm sm:text-xl font-bold text-green-600 mt-1 truncate">Rs. {todayIn.toLocaleString()}</p>
                   </div>
-                  <div className="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-red-500">
-                    <p className="text-xs text-gray-500">Today's Cash Out (-)</p>
-                    <p className="text-xl font-bold text-red-600 mt-0.5">Rs. {todayOut.toLocaleString()}</p>
+                  <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border-l-4 border-red-500">
+                    <p className="text-[10px] sm:text-xs text-gray-500 leading-tight">Today Out (-)</p>
+                    <p className="text-sm sm:text-xl font-bold text-red-600 mt-1 truncate">Rs. {todayOut.toLocaleString()}</p>
                   </div>
                 </div>
+
 
                 <div className="bg-white p-4 rounded-2xl shadow-sm space-y-3 print:hidden">
                   {editingCashId && (
