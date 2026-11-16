@@ -1163,10 +1163,16 @@ export default function App() {
                 const absBal = Math.abs(partyNet).toLocaleString();
                 const statusText = partyNet > 0 ? `aap ke zimme Rs. ${absBal} baqaya hain` : `aap ke Rs. ${absBal} jama hain`;
                 const msg = `Assalam-o-Alaikum ${activeParty.name}, ${currentBiz} ki taraf se yaad-dihani: ${statusText}.`;
-                const cleanPhone = (activeParty.phone || '').replace(/[^0-9]/g, '');
-                const url = cleanPhone ? `https://wa.me{cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me{encodeURIComponent(msg)}`;
+                let cleanPhone = (activeParty.phone || '').replace(/[^0-9]/g, '');
+                if (cleanPhone.startsWith('0')) {
+                  cleanPhone = '92' + cleanPhone.slice(1);
+                }
+                const url = cleanPhone
+                  ? `https://wa.me{cleanPhone}?text=${encodeURIComponent(msg)}`
+                  : `https://wa.me{encodeURIComponent(msg)}`;
                 window.open(url, '_blank');
               };
+
               const filteredEntries = (activeParty.entries || []).filter((en) =>
 
                 (en.note || '').toLowerCase().includes(entrySearch.toLowerCase()) ||
