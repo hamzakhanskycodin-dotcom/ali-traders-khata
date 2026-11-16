@@ -1029,7 +1029,7 @@ export default function App() {
               type="submit"
               className="w-full bg-[#E85D2A] hover:bg-[#d44e1d] text-white py-3 rounded-xl font-extrabold text-sm shadow-md transition"
             >
-              {authMode === 'login' ? 'Login' : 'Account Banayein (Sign Up)'}
+              {authMode === 'login' ? 'Login' : '(Sign Up)'}
             </button>
           </form>
 
