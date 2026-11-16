@@ -6,6 +6,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(clients.claim());
 });
 
+
 self.addEventListener('fetch', (event) => {
   if (event.request.url.includes('supabase.co')) {
     return;
