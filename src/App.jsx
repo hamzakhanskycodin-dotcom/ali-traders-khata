@@ -9,7 +9,7 @@ import {
 
 
 export default function App() {
-
+  const [businesses, setBusinesses] = useState(['Ali Traders', 'Ali Wholesale Mart']);
   const [currentBiz, setCurrentBiz] = useState('Ali Traders');
   const [showBizMenu, setShowBizMenu] = useState(false);
   const [activeView, setActiveView] = useState('home');
