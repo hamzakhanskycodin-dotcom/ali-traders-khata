@@ -199,7 +199,7 @@ export default function App() {
     try {
       const cleanPhone = authEmail.replace(/[^0-9]/g, '');
       if (cleanPhone.length < 10) {
-        throw new Error('Put the correct number (e.g. 037........)');
+        throw new Error('Put the correct number (e.g. 03703917066)');
       }
       const phoneLoginId = `${cleanPhone}@khata.app`;
 
@@ -1006,7 +1006,7 @@ export default function App() {
               <input
                 type="tel"
                 required
-                placeholder="03703917066"
+                placeholder="037........"
                 value={authEmail}
                 onChange={(e) => setAuthEmail(e.target.value)}
                 className="w-full border rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:border-[#E85D2A] focus:outline-none"
