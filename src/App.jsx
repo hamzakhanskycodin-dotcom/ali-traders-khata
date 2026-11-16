@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from './supabase';
+
 import {
   Users, Wallet, FileText, IdCard, Banknote,
   BarChart2, ChevronDown, Menu, Database, Calculator,
@@ -137,24 +139,109 @@ export default function App() {
   const [partyRole, setPartyRole] = useState('Customer');
   const [calcInput, setCalcInput] = useState('');
   const [calcResult, setCalcResult] = useState(0);
+  // Supabase Auth & Cloud Sync States
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [syncStatus, setSyncStatus] = useState('Synced');
 
-  const saveToDisk = (updated) => {
+  // Helper to load cloud data into app states
+  const applyCloudData = (d) => {
+    if (!d) return;
+    if (d.parties) { setParties(d.parties); localStorage.setItem('dk_parties_v2', JSON.stringify(d.parties)); }
+    if (d.cashEntries) { setCashEntries(d.cashEntries); localStorage.setItem('dk_cash', JSON.stringify(d.cashEntries)); }
+    if (d.bills) { setBills(d.bills); localStorage.setItem('dk_bills', JSON.stringify(d.bills)); }
+    if (d.staffList) { setStaffList(d.staffList); localStorage.setItem('dk_staff', JSON.stringify(d.staffList)); }
+    if (d.expenses) { setExpenses(d.expenses); localStorage.setItem('dk_expenses', JSON.stringify(d.expenses)); }
+    if (d.logChartData) { setLogChartData(d.logChartData); localStorage.setItem('dk_monthly_log', JSON.stringify(d.logChartData)); }
+    if (d.sheetCustomers) { setSheetCustomers(d.sheetCustomers); localStorage.setItem('dk_sheet_customers', JSON.stringify(d.sheetCustomers)); }
+    if (d.sheetGridData) { setSheetGridData(d.sheetGridData); localStorage.setItem('dk_sheet_grid', JSON.stringify(d.sheetGridData)); }
+    if (d.stockItems) { setStockItems(d.stockItems); localStorage.setItem('dk_items', JSON.stringify(d.stockItems)); }
+  };
+
+  // Check Login Session & Fetch Cloud Data on Startup
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        const { data } = await supabase
+          .from('user_khata_data')
+          .select('data')
+          .eq('user_id', session.user.id)
+          .single();
+        if (data?.data) applyCloudData(data.data);
+      }
+      setAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      if (session?.user) {
+        const { data } = await supabase
+          .from('user_khata_data')
+          .select('data')
+          .eq('user_id', session.user.id)
+          .single();
+        if (data?.data) applyCloudData(data.data);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthLoading(true);
+    try {
+      if (authMode === 'signup') {
+        const { error } = await supabase.auth.signUp({ email: authEmail, password: authPassword });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
+        if (error) throw error;
+      }
+    } catch (err) {
+      setAuthError(err.message || 'Authentication failed');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+
+  const saveToDisk = async (updated) => {
+    const fullPayload = {
+      parties: updated.parties ?? parties,
+      cashEntries: updated.cashEntries ?? cashEntries,
+      bills: updated.bills ?? bills,
+      staffList: updated.staffList ?? staffList,
+      expenses: updated.expenses ?? expenses,
+      logChartData: updated.logChartData ?? logChartData,
+      sheetCustomers: updated.sheetCustomers ?? sheetCustomers,
+      sheetGridData: updated.sheetGridData ?? sheetGridData,
+      stockItems: updated.stockItems ?? stockItems,
+    };
+
+    // Local API fallback
     fetch('/api/khata', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        parties: updated.parties ?? parties,
-        cashEntries: updated.cashEntries ?? cashEntries,
-        bills: updated.bills ?? bills,
-        staffList: updated.staffList ?? staffList,
-        expenses: updated.expenses ?? expenses,
-        logChartData: updated.logChartData ?? logChartData,
-        sheetCustomers: updated.sheetCustomers ?? sheetCustomers,
-        sheetGridData: updated.sheetGridData ?? sheetGridData,
-
-      }),
+      body: JSON.stringify(fullPayload),
     }).catch(() => { });
+
+    // Online Cloud Sync to Supabase
+    if (session?.user) {
+      setSyncStatus('Saving...');
+      const { error } = await supabase
+        .from('user_khata_data')
+        .upsert({ user_id: session.user.id, data: fullPayload, updated_at: new Date().toISOString() });
+      setSyncStatus(error ? 'Offline' : 'Synced');
+    }
   };
+
 
   const updateParties = (newVal) => { setParties(newVal); saveToDisk({ parties: newVal }); };
   const updateCash = (newVal) => { setCashEntries(newVal); saveToDisk({ cashEntries: newVal }); };
@@ -875,6 +962,83 @@ export default function App() {
 
   const monthGaveTotal = monthlyEntries.filter(e => e.type === 'GAVE').reduce((a, b) => a + b.amt, 0);
   const monthGotTotal = monthlyEntries.filter(e => e.type === 'GOT').reduce((a, b) => a + b.amt, 0);
+  // Show Loading or Login/Signup Screen if User is Not Logged In
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FDF6F0]">
+        <div className="text-center space-y-2">
+          <div className="w-10 h-10 border-4 border-[#E85D2A] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm font-bold text-gray-600">Loading Khata Cloud...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FDF6F0] p-4">
+        <div className="bg-white w-full max-w-sm rounded-3xl shadow-xl p-6 space-y-5 border border-orange-100">
+          <div className="text-center space-y-1">
+            <div className="w-14 h-14 bg-[#E85D2A] text-white rounded-2xl flex items-center justify-center text-2xl font-extrabold mx-auto shadow-md">
+              AK
+            </div>
+            <h1 className="text-xl font-extrabold text-gray-900 pt-2">Ali Traders Khata</h1>
+            <p className="text-xs text-gray-500">
+              {authMode === 'login' ? 'Apne account mein login karein' : 'Naya online khata account banayein'}
+            </p>
+          </div>
+
+          {authError && (
+            <div className="bg-red-50 text-red-600 text-xs font-semibold p-3 rounded-xl border border-red-200">
+              {authError}
+            </div>
+          )}
+
+          <form onSubmit={handleAuthSubmit} className="space-y-3">
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Email Address</label>
+              <input
+                type="email"
+                required
+                placeholder="example@gmail.com"
+                value={authEmail}
+                onChange={(e) => setAuthEmail(e.target.value)}
+                className="w-full border rounded-xl px-3.5 py-2.5 text-sm focus:border-[#E85D2A] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-700 mb-1">Password</label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                placeholder="Kam az kam 6 huroof"
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+                className="w-full border rounded-xl px-3.5 py-2.5 text-sm focus:border-[#E85D2A] focus:outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-[#E85D2A] hover:bg-[#d44e1d] text-white py-3 rounded-xl font-extrabold text-sm shadow-md transition"
+            >
+              {authMode === 'login' ? 'Login Karein' : 'Account Banayein (Sign Up)'}
+            </button>
+          </form>
+
+          <div className="text-center pt-1">
+            <button
+              type="button"
+              onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setAuthError(''); }}
+              className="text-xs font-bold text-[#E85D2A] hover:underline"
+            >
+              {authMode === 'login' ? 'Naya account banana hai? Sign Up karein' : 'Pehle se account hai? Login karein'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F5F6F8] font-sans text-gray-800">
@@ -900,13 +1064,25 @@ export default function App() {
                 <button onClick={() => { const name = prompt('Enter New Business Name:'); if (name) { setBusinesses([...businesses, name]); setCurrentBiz(name); } setShowBizMenu(false); }} className="w-full text-left px-4 py-2 text-sm text-[#E85D2A] font-semibold border-t mt-1">
                   + Add New Business
                 </button>
+                <div className="border-t mt-1 pt-1.5 px-4 pb-1">
+                  <p className="text-[10px] text-gray-400 truncate">{session.user.email} • {syncStatus}</p>
+                  <button
+                    onClick={() => supabase.auth.signOut()}
+                    className="w-full text-left text-xs font-bold text-red-600 hover:bg-red-50 py-1.5 px-2 rounded-lg mt-1"
+                  >
+                    Logout Account
+                  </button>
+                </div>
               </div>
             )}
+
+
           </div>
 
           {activeView !== 'home' && (
             <button
               onClick={() => {
+                S
                 if (selectedPartyId) { setSelectedPartyId(null); setShowReport(false); setIsEditingParty(false); }
                 else { setActiveView('home'); setInput1(''); setInput2(''); }
               }}
