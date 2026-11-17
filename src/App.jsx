@@ -15,7 +15,8 @@ export default function App() {
   const [showBizMenu, setShowBizMenu] = useState(false);
   const [activeView, setActiveView] = useState('home');
   // PIN Lock States for Cash, Staff, Backups, Monthly Chart
-  const LOCKED_VIEWS = ['cash', 'staff', 'backup', 'monthly']; // Apne exact view names check kar lein
+ const LOCKED_VIEWS = ['cash', 'staff', 'backups', 'monthly-chart'];
+
   const [lockedTargetView, setLockedTargetView] = useState(null);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
