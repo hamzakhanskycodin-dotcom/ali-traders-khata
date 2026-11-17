@@ -1,21 +1,12 @@
-/* Tailwind directives are valid PostCSS at-rules. */
-/* stylelint-disable-next-line at-rule-no-unknown */
 @tailwind base;
-/* stylelint-disable-next-line at-rule-no-unknown */
 @tailwind components;
-/* stylelint-disable-next-line at-rule-no-unknown */
 @tailwind utilities;
+
 html, body, #root {
   margin: 0;
   padding: 0;
   width: 100%;
+  min-height: 100vh;
   overflow-x: hidden;
-  overscroll-behavior-y: none;
-}
-
-/* Mobile par fuzool scrollbar chhupane ke liye (scrolling phir bhi smooth chalegi) */
-::-webkit-scrollbar {
-  width: 0px;
-  height: 0px;
-  background: transparent;
+  overflow-y: auto !important;
 }
