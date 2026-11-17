@@ -15,7 +15,7 @@ export default function App() {
   const [showBizMenu, setShowBizMenu] = useState(false);
   const [activeView, setActiveView] = useState('home');
   // PIN Lock States for Cash, Staff, Backups, Monthly Chart
- const LOCKED_VIEWS = ['cash', 'staff', 'backups', 'monthly-chart'];
+  const LOCKED_VIEWS = ['cash', 'staff', 'backups', 'monthly-chart'];
 
   const [lockedTargetView, setLockedTargetView] = useState(null);
   const [pinInput, setPinInput] = useState('');
@@ -962,7 +962,7 @@ export default function App() {
     { id: 'monthly-chart', label: 'Monthly Chart', icon: Table2 },
     { id: 'customers-sheet', label: '30 Days Sheet', icon: ClipboardList },
   ];
- 
+
 
   const activeParty = parties.find(p => p.id === selectedPartyId);
   // Add or Update Cash Entry (Date-wise)
@@ -1451,21 +1451,21 @@ export default function App() {
                 {khataCards.map((card) => {
                   const Icon = card.icon;
                   return (
-                                    <button
-                  key={card.id}
-                  onClick={() => handleOpenView(card.id)}
-                  className="relative bg-[#FDF6F0] hover:bg-[#FCECE0] transition rounded-2xl py-5 px-2 sm:py-7 sm:px-4 flex flex-col items-center justify-center gap-2 sm:gap-3 border border-orange-100/80"
-                >
-                  {LOCKED_VIEWS.includes(card.id) && (
-                    <span className="absolute top-2 right-2 text-[11px] bg-white/90 px-1.5 py-0.5 rounded-full shadow-xs">
-                      🔒
-                    </span>
-                  )}
-                  <Icon className="text-[#E85D2A]" size={26} strokeWidth={1.8} />
-                  <span className="font-semibold text-gray-800 text-xs sm:text-sm text-center leading-tight">
-                    {card.label}
-                  </span>
-                </button>
+                    <button
+                      key={card.id}
+                      onClick={() => handleOpenView(card.id)}
+                      className="relative bg-[#FDF6F0] hover:bg-[#FCECE0] transition rounded-2xl py-5 px-2 sm:py-7 sm:px-4 flex flex-col items-center justify-center gap-2 sm:gap-3 border border-orange-100/80"
+                    >
+                      {LOCKED_VIEWS.includes(card.id) && (
+                        <span className="absolute top-2 right-2 text-[11px] bg-white/90 px-1.5 py-0.5 rounded-full shadow-xs">
+                          🔒
+                        </span>
+                      )}
+                      <Icon className="text-[#E85D2A]" size={26} strokeWidth={1.8} />
+                      <span className="font-semibold text-gray-800 text-xs sm:text-sm text-center leading-tight">
+                        {card.label}
+                      </span>
+                    </button>
 
                   );
                 })}
@@ -2076,47 +2076,49 @@ export default function App() {
                 </div>
               </div>
             )}
-            
-      {/* PIN Lock Modal */}
-      {lockedTargetView && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <form onSubmit={handleVerifyPin} className="bg-white w-full max-w-xs rounded-2xl p-5 shadow-xl space-y-4 text-center">
-            <div className="w-12 h-12 rounded-full bg-orange-100 text-[#E85D2A] flex items-center justify-center mx-auto text-xl">
-              🔒
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-800 text-base">Protected Section</h3>
-              <p className="text-xs text-gray-500 mt-1">Is hisse ko kholne ke liye 4-digit PIN darj karein</p>
-            </div>
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength={6}
-              autoFocus
-              value={pinInput}
-              onChange={(e) => { setPinInput(e.target.value); setPinError(''); }}
-              placeholder="Enter PIN (Default: 1234)"
-              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-center text-lg font-bold tracking-widest focus:outline-none focus:border-[#E85D2A]"
-            />
-            {pinError && <p className="text-xs text-red-600 font-semibold">{pinError}</p>}
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setLockedTargetView(null)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-600 font-semibold text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="flex-1 py-2.5 rounded-xl bg-[#E85D2A] text-white font-bold text-sm"
-              >
-                Unlock
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+
+            {/* PIN Lock Popup */}
+            {lockedTargetView && (
+              <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4">
+                <form onSubmit={handleVerifyPin} className="bg-white w-full max-w-xs rounded-2xl p-5 shadow-xl space-y-4 text-center">
+                  <div className="w-12 h-12 rounded-full bg-orange-100 text-[#E85D2A] flex items-center justify-center mx-auto text-xl">
+                    🔒
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-base">Protected Section</h3>
+                    <p className="text-xs text-gray-500 mt-1">Kholne ke liye PIN darj karein (Default: 1234)</p>
+                  </div>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={6}
+                    autoFocus
+                    value={pinInput}
+                    onChange={(e) => { setPinInput(e.target.value); setPinError(''); }}
+                    placeholder="••••"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-center text-lg font-bold tracking-widest focus:outline-none focus:border-[#E85D2A]"
+                  />
+                  {pinError && <p className="text-xs text-red-600 font-semibold">{pinError}</p>}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setLockedTargetView(null)}
+                      className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-600 font-semibold text-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-2.5 rounded-xl bg-[#E85D2A] text-white font-bold text-sm"
+                    >
+                      Unlock
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+
 
 
 
