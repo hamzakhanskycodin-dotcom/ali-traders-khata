@@ -47,8 +47,7 @@ export default function App() {
   const [editingExpId, setEditingExpId] = useState(null);
   const [expFilterMonth, setExpFilterMonth] = useState('ALL');
   const [expDeductCash, setExpDeductCash] = useState(false);
-  const rawDate = now.toISOString().split('T')[0];
-
+  
   // DigiKhata-Style Expense UI States
   const [selectedExpCat, setSelectedExpCat] = useState(null);
   const [expCatSearch, setExpCatSearch] = useState('');
