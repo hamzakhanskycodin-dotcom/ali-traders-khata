@@ -1856,8 +1856,8 @@ export default function App() {
                     <div>
                       <span
                         className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${selectedEntryPopup.type === 'GAVE'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-green-100 text-green-700'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-green-100 text-green-700'
                           }`}
                       >
                         {selectedEntryPopup.type === 'GAVE' ? 'YOU GAVE' : 'YOU GOT'}
@@ -1896,12 +1896,13 @@ export default function App() {
                       onClick={() => {
                         const entryId = selectedEntryPopup.id;
                         setSelectedEntryPopup(null);
-                        handleDeleteEntry(entryId);
+                        deleteEntry(entryId); // <-- Yahan apna exact function naam likhein
                       }}
                       className="py-3 rounded-xl bg-red-50 text-red-600 font-bold text-sm hover:bg-red-100 transition flex items-center justify-center gap-2"
                     >
                       <Trash2 size={16} /> Delete Entry
                     </button>
+
                   </div>
                 </div>
               </div>
