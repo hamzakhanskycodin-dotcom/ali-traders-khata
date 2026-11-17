@@ -1842,6 +1842,71 @@ export default function App() {
                 </div>
               );
             })()}
+            {/* Entry Tap Action Modal (Edit / Delete) */}
+            {selectedEntryPopup && (
+              <div
+                className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4 print:hidden"
+                onClick={() => setSelectedEntryPopup(null)}
+              >
+                <div
+                  className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-start justify-between border-b pb-3">
+                    <div>
+                      <span
+                        className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${selectedEntryPopup.type === 'GAVE'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-green-100 text-green-700'
+                          }`}
+                      >
+                        {selectedEntryPopup.type === 'GAVE' ? 'YOU GAVE' : 'YOU GOT'}
+                      </span>
+                      <h3 className="text-2xl font-extrabold text-gray-900 mt-1.5">
+                        Rs {Number(selectedEntryPopup.amt || 0).toLocaleString()}
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-0.5">{selectedEntryPopup.date}</p>
+                      {selectedEntryPopup.note && (
+                        <p className="text-sm font-medium text-gray-700 mt-1">
+                          {selectedEntryPopup.note}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setSelectedEntryPopup(null)}
+                      className="text-gray-400 hover:text-gray-700 text-lg font-bold px-2"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => {
+                        const entryToEdit = selectedEntryPopup;
+                        setSelectedEntryPopup(null);
+                        startEditEntry(entryToEdit);
+                      }}
+                      className="py-3 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm hover:bg-blue-100 transition flex items-center justify-center gap-2"
+                    >
+                      <Edit2 size={16} /> Edit Entry
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const entryId = selectedEntryPopup.id;
+                        setSelectedEntryPopup(null);
+                        handleDeleteEntry(entryId);
+                      }}
+                      className="py-3 rounded-xl bg-red-50 text-red-600 font-bold text-sm hover:bg-red-100 transition flex items-center justify-center gap-2"
+                    >
+                      <Trash2 size={16} /> Delete Entry
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
 
 
             {/* PICTURE 2 & 3: DIGIKHATA FULL ENTRY SCREEN + CALCULATOR + ADD ITEMS */}
