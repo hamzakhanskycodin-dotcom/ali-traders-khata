@@ -47,7 +47,7 @@ export default function App() {
   const [editingExpId, setEditingExpId] = useState(null);
   const [expFilterMonth, setExpFilterMonth] = useState('ALL');
   const [expDeductCash, setExpDeductCash] = useState(false);
-  
+
   // DigiKhata-Style Expense UI States
   const [selectedExpCat, setSelectedExpCat] = useState(null);
   const [expCatSearch, setExpCatSearch] = useState('');
@@ -187,51 +187,156 @@ export default function App() {
     if (d.stockItems) { setStockItems(d.stockItems); localStorage.setItem('dk_items', JSON.stringify(d.stockItems)); }
   };
 
-  // Check Login Session & Fetch Cloud Data on Startup
+   // Helper: Push current local state to Supabase Cloud
+  const pushAllToCloud = async (userId, payloadOverride = null) => {
+    if (!userId || !navigator.onLine) return false;
+    try {
+      setSyncStatus('Syncing...');
+      const payload = payloadOverride || {
+        businesses: JSON.parse(localStorage.getItem('dk_businesses')) || businesses,
+        currentBiz: localStorage.getItem('dk_current_biz') || currentBiz,
+        parties: JSON.parse(localStorage.getItem('dk_parties_v2')) || parties,
+        cashEntries: JSON.parse(localStorage.getItem('dk_cash')) || cashEntries,
+        bills: JSON.parse(localStorage.getItem('dk_bills')) || bills,
+        staffList: JSON.parse(localStorage.getItem('dk_staff')) || staffList,
+        expenses: JSON.parse(localStorage.getItem('dk_expenses')) || expenses,
+        logChartData: JSON.parse(localStorage.getItem('dk_monthly_log')) || logChartData,
+        sheetCustomers: JSON.parse(localStorage.getItem('dk_sheet_customers')) || sheetCustomers,
+        sheetGridData: JSON.parse(localStorage.getItem('dk_sheet_grid')) || sheetGridData,
+        stockItems: JSON.parse(localStorage.getItem('dk_items')) || stockItems,
+      };
+
+      const { error } = await supabase
+        .from('user_khata_data')
+        .upsert({ user_id: userId, data: payload, updated_at: new Date().toISOString() });
+
+      if (!error) {
+        localStorage.removeItem('dk_pending_sync');
+        setSyncStatus('Synced');
+        return true;
+      } else {
+        setSyncStatus('Offline (Pending)');
+        return false;
+      }
+    } catch {
+      setSyncStatus('Offline (Pending)');
+      return false;
+    }
+  };
+
+  // Check Login Session & Fetch/Push Cloud Data on Startup
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        const { data } = await supabase
-          .from('user_khata_data')
-          .select('data')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        if (data?.data) applyCloudData(data.data);
+    const cachedSessStr = localStorage.getItem('dk_cached_session');
+    if (cachedSessStr && !navigator.onLine) {
+      try {
+        setSession(JSON.parse(cachedSessStr));
+        setSyncStatus(localStorage.getItem('dk_pending_sync') ? 'Offline (Pending)' : 'Offline Ready');
+        setAuthLoading(false);
+      } catch {}
+    }
+
+    supabase.auth.getSession().then(async ({ data: { session: liveSession } }) => {
+      const activeSess = liveSession || (cachedSessStr ? JSON.parse(cachedSessStr) : null);
+      if (liveSession) {
+        localStorage.setItem('dk_cached_session', JSON.stringify(liveSession));
+      }
+      setSession(activeSess);
+
+      if (activeSess?.user && navigator.onLine) {
+        if (localStorage.getItem('dk_pending_sync') === 'true') {
+          await pushAllToCloud(activeSess.user.id);
+        } else {
+          const { data } = await supabase
+            .from('user_khata_data')
+            .select('data')
+            .eq('user_id', activeSess.user.id)
+            .maybeSingle();
+          if (data?.data) applyCloudData(data.data);
+          setSyncStatus('Synced');
+        }
+      } else if (!navigator.onLine) {
+        setSyncStatus(localStorage.getItem('dk_pending_sync') ? 'Offline (Pending)' : 'Offline Ready');
+      }
+      setAuthLoading(false);
+    }).catch(() => {
+      if (cachedSessStr) {
+        setSession(JSON.parse(cachedSessStr));
+        setSyncStatus(localStorage.getItem('dk_pending_sync') ? 'Offline (Pending)' : 'Offline Ready');
       }
       setAuthLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        const { data } = await supabase
-          .from('user_khata_data')
-          .select('data')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        if (data?.data) applyCloudData(data.data);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('dk_cached_session');
+        localStorage.removeItem('dk_pending_sync');
+        setSession(null);
+        return;
+      }
+      if (newSession) {
+        localStorage.setItem('dk_cached_session', JSON.stringify(newSession));
+        setSession(newSession);
+        if (navigator.onLine) {
+          if (localStorage.getItem('dk_pending_sync') === 'true') {
+            await pushAllToCloud(newSession.user.id);
+          } else {
+            const { data } = await supabase
+              .from('user_khata_data')
+              .select('data')
+              .eq('user_id', newSession.user.id)
+              .maybeSingle();
+            if (data?.data) applyCloudData(data.data);
+          }
+        }
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
-  // Mobile app wapas khulte hi cloud se fresh data sync karein
+
+  // Auto-Sync when Internet returns (Online event) or App reopens (Visibility event)
   useEffect(() => {
-    const syncOnFocus = async () => {
-      if (document.visibilityState === 'visible' && session?.user) {
-        const { data } = await supabase
-          .from('user_khata_data')
-          .select('data')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-        if (data?.data) applyCloudData(data.data);
+    const handleOnlineSync = async () => {
+      const cachedSess = session || JSON.parse(localStorage.getItem('dk_cached_session') || 'null');
+      if (cachedSess?.user) {
+        await pushAllToCloud(cachedSess.user.id);
       }
     };
-    document.addEventListener('visibilitychange', syncOnFocus);
-    return () => document.removeEventListener('visibilitychange', syncOnFocus);
-  }, [session]);
 
+    const handleOfflineStatus = () => {
+      setSyncStatus(localStorage.getItem('dk_pending_sync') ? 'Offline (Pending)' : 'Offline Ready');
+    };
+
+    const syncOnFocus = async () => {
+      if (document.visibilityState === 'visible' && session?.user) {
+        if (!navigator.onLine) {
+          handleOfflineStatus();
+          return;
+        }
+        if (localStorage.getItem('dk_pending_sync') === 'true') {
+          await pushAllToCloud(session.user.id);
+        } else {
+          const { data } = await supabase
+            .from('user_khata_data')
+            .select('data')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          if (data?.data) applyCloudData(data.data);
+          setSyncStatus('Synced');
+        }
+      }
+    };
+
+    window.addEventListener('online', handleOnlineSync);
+    window.addEventListener('offline', handleOfflineStatus);
+    document.addEventListener('visibilitychange', syncOnFocus);
+
+    return () => {
+      window.removeEventListener('online', handleOnlineSync);
+      window.removeEventListener('offline', handleOfflineStatus);
+      document.removeEventListener('visibilitychange', syncOnFocus);
+    };
+  }, [session]);
 
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
@@ -257,40 +362,58 @@ export default function App() {
       setAuthLoading(false);
     }
   };
-  const saveToDisk = async (updated = {}) => {
-    if (updated.businesses) localStorage.setItem('dk_businesses', JSON.stringify(updated.businesses));
-    if (updated.currentBiz) localStorage.setItem('dk_current_biz', updated.currentBiz);
+    const saveToDisk = async (updated = {}) => {
+    const nextBusinesses = updated.businesses ?? businesses;
+    const nextCurrentBiz = updated.currentBiz ?? currentBiz;
+    const nextParties = updated.parties ?? parties;
+    const nextCash = updated.cashEntries ?? cashEntries;
+    const nextBills = updated.bills ?? bills;
+    const nextStaff = updated.staffList ?? staffList;
+    const nextExpenses = updated.expenses ?? expenses;
+    const nextLog = updated.logChartData ?? logChartData;
+    const nextSheetCust = updated.sheetCustomers ?? sheetCustomers;
+    const nextSheetGrid = updated.sheetGridData ?? sheetGridData;
+    const nextItems = updated.stockItems ?? stockItems;
+
+    // 1. Save instantly to device localStorage
+    localStorage.setItem('dk_businesses', JSON.stringify(nextBusinesses));
+    localStorage.setItem('dk_current_biz', nextCurrentBiz);
+    localStorage.setItem('dk_parties_v2', JSON.stringify(nextParties));
+    localStorage.setItem('dk_cash', JSON.stringify(nextCash));
+    localStorage.setItem('dk_bills', JSON.stringify(nextBills));
+    localStorage.setItem('dk_staff', JSON.stringify(nextStaff));
+    localStorage.setItem('dk_expenses', JSON.stringify(nextExpenses));
+    localStorage.setItem('dk_monthly_log', JSON.stringify(nextLog));
+    localStorage.setItem('dk_sheet_customers', JSON.stringify(nextSheetCust));
+    localStorage.setItem('dk_sheet_grid', JSON.stringify(nextSheetGrid));
+    localStorage.setItem('dk_items', JSON.stringify(nextItems));
 
     const fullPayload = {
-      businesses: updated.businesses ?? businesses,
-      currentBiz: updated.currentBiz ?? currentBiz,
-      parties: updated.parties ?? parties,
-      cashEntries: updated.cashEntries ?? cashEntries,
-      bills: updated.bills ?? bills,
-      staffList: updated.staffList ?? staffList,
-      expenses: updated.expenses ?? expenses,
-      logChartData: updated.logChartData ?? logChartData,
-      sheetCustomers: updated.sheetCustomers ?? sheetCustomers,
-      sheetGridData: updated.sheetGridData ?? sheetGridData,
-      stockItems: updated.stockItems ?? stockItems,
+      businesses: nextBusinesses,
+      currentBiz: nextCurrentBiz,
+      parties: nextParties,
+      cashEntries: nextCash,
+      bills: nextBills,
+      staffList: nextStaff,
+      expenses: nextExpenses,
+      logChartData: nextLog,
+      sheetCustomers: nextSheetCust,
+      sheetGridData: nextSheetGrid,
+      stockItems: nextItems,
     };
 
-    // Local API fallback
-    fetch('/api/khata', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(fullPayload),
-    }).catch(() => { });
+    // 2. Mark as pending sync
+    localStorage.setItem('dk_pending_sync', 'true');
 
-    // Online Cloud Sync to Supabase
-    if (session?.user) {
-      setSyncStatus('Saving...');
-      const { error } = await supabase
-        .from('user_khata_data')
-        .upsert({ user_id: session.user.id, data: fullPayload, updated_at: new Date().toISOString() });
-      setSyncStatus(error ? 'Offline' : 'Synced');
+    // 3. If online, sync immediately to Supabase Cloud
+    const activeUser = session?.user || JSON.parse(localStorage.getItem('dk_cached_session') || 'null')?.user;
+    if (navigator.onLine && activeUser?.id) {
+      await pushAllToCloud(activeUser.id, fullPayload);
+    } else {
+      setSyncStatus('Offline (Pending)');
     }
   };
+
 
 
   const updateParties = (newVal) => { setParties(newVal); saveToDisk({ parties: newVal }); };
