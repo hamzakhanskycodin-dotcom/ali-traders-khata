@@ -1713,7 +1713,7 @@ export default function App() {
               );
 
               return (
-                <div className="pb-24 -mx-4 -mt-6 sm:mx-0 sm:mt-0 space-y-3">
+              <div className="pb-36 -mx-4 -mt-6 sm:mx-0 sm:mt-0 space-y-3">
                   {/* Top DigiKhata Header + Net Balance Card */}
                   <div className="bg-gradient-to-b from-[#E85D2A] to-[#F27A3F] text-white px-4 pt-4 pb-5 sm:rounded-t-3xl space-y-3.5 shadow-sm">
                     <div className="flex items-center justify-between gap-2">
