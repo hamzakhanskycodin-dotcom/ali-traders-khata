@@ -3954,16 +3954,16 @@ export default function App() {
         }
       </main >
 
-      {/* PIN Lock Popup */}
+            {/* PIN Lock Popup */}
       {lockedTargetView && (
-        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z- bg-black/60 flex items-center justify-center p-4">
           <form onSubmit={handleVerifyPin} className="bg-white w-full max-w-xs rounded-2xl p-5 shadow-xl space-y-4 text-center">
             <div className="w-12 h-12 rounded-full bg-orange-100 text-[#E85D2A] flex items-center justify-center mx-auto text-xl">
               🔒
             </div>
             <div>
               <h3 className="font-bold text-gray-800 text-base">Protected Section</h3>
-
+              <p className="text-xs text-gray-500 mt-1">Kholne ke liye PIN darj karein (Default: 1234)</p>
             </div>
             <input
               type="password"
@@ -3990,74 +3990,72 @@ export default function App() {
               >
                 Unlock
               </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setLockedTargetView(null);
+                setOldPinInput('');
+                setNewPinInput('');
+                setChangePinMsg('');
+                setShowChangePinModal(true);
+              }}
+              className="w-full text-xs text-[#E85D2A] font-semibold hover:underline pt-1"
+            >
+              Change PIN / Password?
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Change PIN Modal */}
+      {showChangePinModal && (
+        <div className="fixed inset-0 z- bg-black/60 flex items-center justify-center p-4">
+          <form onSubmit={handleChangePinSubmit} className="bg-white w-full max-w-xs rounded-2xl p-5 shadow-xl space-y-3.5 text-center">
+            <div className="w-12 h-12 rounded-full bg-orange-100 text-[#E85D2A] flex items-center justify-center mx-auto text-xl">
+              🔑
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-800 text-base">Change Lock PIN</h3>
+              <p className="text-xs text-gray-500 mt-1">Purana aur naya PIN darj karein</p>
+            </div>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              autoFocus
+              value={oldPinInput}
+              onChange={(e) => { setOldPinInput(e.target.value); setChangePinMsg(''); }}
+              placeholder="Purana PIN (Old PIN)"
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-center text-base font-bold tracking-widest focus:outline-none focus:border-[#E85D2A]"
+            />
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              value={newPinInput}
+              onChange={(e) => { setNewPinInput(e.target.value); setChangePinMsg(''); }}
+              placeholder="Naya PIN (New 4-6 digits)"
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-center text-base font-bold tracking-widest focus:outline-none focus:border-[#E85D2A]"
+            />
+            {changePinMsg && <p className="text-xs text-red-600 font-semibold">{changePinMsg}</p>}
+            <div className="flex gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => {
-                  setLockedTargetView(null);
-                  setOldPinInput('');
-                  setNewPinInput('');
-                  setChangePinMsg('');
-                  setShowChangePinModal(true);
-                }}
-                className="w-full text-xs text-[#E85D2A] font-semibold hover:underline pt-1"
+                onClick={() => setShowChangePinModal(false)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-600 font-semibold text-sm"
               >
-                Change PIN / Password?
+                Cancel
               </button>
-
+              <button
+                type="submit"
+                className="flex-1 py-2.5 rounded-xl bg-[#E85D2A] text-white font-bold text-sm"
+              >
+                Save PIN
+              </button>
             </div>
           </form>
-          {/* Change PIN Modal */}
-          {showChangePinModal && (
-            <div className="fixed inset-0 z- bg-black/60 flex items-center justify-center p-4">
-              <form onSubmit={handleChangePinSubmit} className="bg-white w-full max-w-xs rounded-2xl p-5 shadow-xl space-y-3.5 text-center">
-                <div className="w-12 h-12 rounded-full bg-orange-100 text-[#E85D2A] flex items-center justify-center mx-auto text-xl">
-                  🔑
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-800 text-base">Change Lock PIN</h3>
-                  <p className="text-xs text-gray-500 mt-1">Purana aur naya PIN darj karein</p>
-                </div>
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={6}
-                  autoFocus
-                  value={oldPinInput}
-                  onChange={(e) => { setOldPinInput(e.target.value); setChangePinMsg(''); }}
-                  placeholder="Purana PIN (Old PIN)"
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-center text-base font-bold tracking-widest focus:outline-none focus:border-[#E85D2A]"
-                />
-                <input
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={newPinInput}
-                  onChange={(e) => { setNewPinInput(e.target.value); setChangePinMsg(''); }}
-                  placeholder="Naya PIN (New 4-6 digits)"
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-center text-base font-bold tracking-widest focus:outline-none focus:border-[#E85D2A]"
-                />
-                {changePinMsg && <p className="text-xs text-red-600 font-semibold">{changePinMsg}</p>}
-                <div className="flex gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowChangePinModal(false)}
-                    className="flex-1 py-2.5 rounded-xl border border-gray-300 text-gray-600 font-semibold text-sm"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-2.5 rounded-xl bg-[#E85D2A] text-white font-bold text-sm"
-                  >
-                    Save PIN
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
         </div>
-
       )}
 
     </div >
