@@ -20,6 +20,8 @@ export default function App() {
   const [partySearch, setPartySearch] = useState('');
   const [showAddPartyBox, setShowAddPartyBox] = useState(false);
   const [entrySearch, setEntrySearch] = useState('');
+  const [selectedEntryPopup, setSelectedEntryPopup] = useState(null);
+
 
 
   // Cash Book Upgrade States
@@ -1234,8 +1236,8 @@ export default function App() {
                       setShowSideMenu(false);
                     }}
                     className={`w-full text-left px-4 py-2.5 rounded-xl font-semibold text-sm transition ${activeView === item.id
-                        ? 'bg-orange-50 text-[#E85D2A] font-bold'
-                        : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-orange-50 text-[#E85D2A] font-bold'
+                      : 'text-gray-700 hover:bg-gray-100'
                       }`}
                   >
                     {item.label}
@@ -1783,8 +1785,12 @@ export default function App() {
                     ) : (
                       <div className="divide-y divide-gray-100">
                         {displayEntries.map((en) => (
-                          <div key={en.id} className="grid grid-cols-12 items-stretch text-sm hover:bg-gray-50/70">
-                            {/* Left Column: Date, Note, Running Bal Badge & Edit/Delete */}
+                          <div
+                            key={en.id}
+                            onClick={() => setSelectedEntryPopup(en)}
+                            className="grid grid-cols-12 items-stretch text-sm hover:bg-orange-50/50 active:bg-orange-100/60 cursor-pointer transition"
+                          >
+                            {/* Left Column: Date, Note & Running Bal Badge */}
                             <div className="col-span-6 px-3 py-3 flex flex-col justify-between">
                               <div>
                                 <p className="text-[11px] text-gray-400 font-medium">{en.date}</p>
@@ -1796,16 +1802,9 @@ export default function App() {
                                 <span className="inline-block bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded">
                                   Bal. Rs {Math.abs(Number(en.runningBal || 0)).toLocaleString()}
                                 </span>
-                                <div className="flex items-center gap-1.5 print:hidden">
-                                  <button onClick={() => startEditEntry(en)} title="Edit" className="text-blue-500 hover:text-blue-700 p-0.5">
-                                    <Edit2 size={12} />
-                                  </button>
-                                  <button onClick={() => handleDeleteEntry(en.id)} title="Delete" className="text-red-400 hover:text-red-600 p-0.5">
-                                    <Trash2 size={12} />
-                                  </button>
-                                </div>
                               </div>
                             </div>
+
 
                             {/* Middle Column: You Gave (Soft Red Tinted Column) */}
                             <div className="col-span-3 bg-red-50/60 flex items-center justify-center px-1 font-extrabold text-red-600 text-sm">
