@@ -25,6 +25,7 @@ export default function App() {
 
 
   // Cash Book Upgrade States
+  const [selectedCashPopup, setSelectedCashPopup] = useState(null);
   const [cashDate, setCashDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [editingCashId, setEditingCashId] = useState(null);
   const [cashFilterType, setCashFilterType] = useState('ALL'); // 'ALL', 'DAILY', 'MONTHLY'
@@ -2146,122 +2147,264 @@ export default function App() {
         )}
 
 
-        {/* 2. UPGRADED CASH BOOK */}
-        {
-          activeView === 'cash' && (() => {
-            const todayStr = new Date().toISOString().split('T');
-            const todayIn = cashEntries.filter(c => (c.rawDate || todayStr) === todayStr && c.type === 'IN').reduce((a, b) => a + b.amt, 0);
-            const todayOut = cashEntries.filter(c => (c.rawDate || todayStr) === todayStr && c.type === 'OUT').reduce((a, b) => a + b.amt, 0);
+        {/* 2. UPGRADED CASH BOOK (Clean Mobile-First UI) */}
+        {activeView === 'cash' && (() => {
+          const todayStr = new Date().toISOString().split('T')[0];
+          const todayIn = cashEntries.filter(c => (c.rawDate || todayStr) === todayStr && c.type === 'IN').reduce((a, b) => a + b.amt, 0);
+          const todayOut = cashEntries.filter(c => (c.rawDate || todayStr) === todayStr && c.type === 'OUT').reduce((a, b) => a + b.amt, 0);
 
-            const filteredCash = cashEntries.filter(c => {
-              const rDate = c.rawDate || todayStr;
-              if (cashFilterType === 'DAILY') return rDate === cashFilterDate;
-              if (cashFilterType === 'MONTHLY') return rDate.startsWith(cashFilterMonth);
-              return true;
-            });
+          const filteredCash = cashEntries.filter(c => {
+            const rDate = c.rawDate || todayStr;
+            if (cashFilterType === 'DAILY') return rDate === cashFilterDate;
+            if (cashFilterType === 'MONTHLY') return rDate.startsWith(cashFilterMonth);
+            return true;
+          });
 
-            const filteredIn = filteredCash.filter(c => c.type === 'IN').reduce((a, b) => a + b.amt, 0);
-            const filteredOut = filteredCash.filter(c => c.type === 'OUT').reduce((a, b) => a + b.amt, 0);
+          const filteredIn = filteredCash.filter(c => c.type === 'IN').reduce((a, b) => a + b.amt, 0);
+          const filteredOut = filteredCash.filter(c => c.type === 'OUT').reduce((a, b) => a + b.amt, 0);
 
-            return (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold">Cash Book — {currentBiz}</h2>
-                  <button
-                    onClick={() => window.print()}
-                    className="bg-[#E85D2A] text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-[#d44e1d] print:hidden"
-                  >
-                    <Printer size={14} /> Print / PDF Report
-                  </button>
+          return (
+            <div className="space-y-3.5 pb-6">
+              {/* Compact Top Header */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <h2 className="text-lg font-extrabold text-gray-900 leading-tight">Cash Book</h2>
+                  <p className="text-xs text-gray-500 font-medium truncate">{currentBiz}</p>
                 </div>
+                <button
+                  onClick={() => window.print()}
+                  className="shrink-0 bg-[#E85D2A] text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs hover:bg-[#d44e1d] active:scale-95 transition print:hidden"
+                >
+                  <Printer size={14} /> PDF Report
+                </button>
+              </div>
 
-                <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                  <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border-l-4 border-[#E85D2A]">
-                    <p className="text-[10px] sm:text-xs text-gray-500 leading-tight">Cash in Hand</p>
-                    <p className="text-sm sm:text-2xl font-bold text-[#E85D2A] mt-1 truncate">Rs. {cashInHand.toLocaleString()}</p>
+              {/* Hero Cash-in-Hand + Today Summary Card */}
+              <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-[#E85D2A] to-[#F37A3F] px-4 py-3.5 text-white flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider text-orange-100 font-semibold">Cash in Hand</p>
+                    <p className="text-2xl font-extrabold mt-0.5">Rs. {cashInHand.toLocaleString()}</p>
                   </div>
-                  <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border-l-4 border-green-500">
-                    <p className="text-[10px] sm:text-xs text-gray-500 leading-tight">Today In (+)</p>
-                    <p className="text-sm sm:text-xl font-bold text-green-600 mt-1 truncate">Rs. {todayIn.toLocaleString()}</p>
-                  </div>
-                  <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border-l-4 border-red-500">
-                    <p className="text-[10px] sm:text-xs text-gray-500 leading-tight">Today Out (-)</p>
-                    <p className="text-sm sm:text-xl font-bold text-red-600 mt-1 truncate">Rs. {todayOut.toLocaleString()}</p>
-                  </div>
-                </div>
-
-
-                <div className="bg-white p-3 rounded-2xl shadow-sm space-y-2 print:hidden">
-                  {editingCashId && (
-                    <div className="flex justify-between items-center text-xs font-bold text-blue-600">
-                      <span>Editing Cash Entry...</span>
-                      <button onClick={() => { setEditingCashId(null); setInput1(''); setInput2(''); }} className="underline">Cancel Edit</button>
-                    </div>
-                  )}
-                  <div className="flex flex-wrap gap-2">
-                    <input type="text" placeholder="Cash Description" value={input1} onChange={(e) => setInput1(e.target.value)} className="border rounded-lg px-2.5 py-1.5 text-sm flex-1 min-w-[180px]" />
-                    <input type="number" placeholder="Amount (Rs)" value={input2} onChange={(e) => setInput2(e.target.value)} className="border rounded-lg px-2.5 py-1.5 text-sm w-32 font-bold" />
-                    <input type="date" value={cashDate} onChange={(e) => setCashDate(e.target.value)} className="border rounded-lg px-2.5 py-1.5 text-xs" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => handleSaveCash('IN')} className="bg-green-600 hover:bg-green-700 text-white py-1.5 rounded-lg text-xs sm:text-sm font-bold">
-                      {editingCashId ? 'Update Cash In (+)' : 'CASH IN (+)'}
-                    </button>
-                    <button onClick={() => handleSaveCash('OUT')} className="bg-red-600 hover:bg-red-700 text-white py-1.5 rounded-lg text-xs sm:text-sm font-bold">
-                      {editingCashId ? 'Update Cash Out (-)' : 'CASH OUT (-)'}
-                    </button>
+                  <div className="text-right text-xs text-orange-100">
+                    <p>{filteredCash.length} Entries</p>
                   </div>
                 </div>
-
-
-                <div className="bg-white p-3.5 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-3 border border-orange-100">
-                  <div className="flex flex-wrap items-center gap-2 print:hidden">
-                    <span className="text-xs font-bold text-gray-500 uppercase">Report Filter:</span>
-                    <button onClick={() => setCashFilterType('ALL')} className={`px-3 py-1 rounded-lg text-xs font-bold ${cashFilterType === 'ALL' ? 'bg-[#E85D2A] text-white' : 'bg-gray-100 text-gray-600'}`}>All Entries</button>
-                    <button onClick={() => setCashFilterType('DAILY')} className={`px-3 py-1 rounded-lg text-xs font-bold ${cashFilterType === 'DAILY' ? 'bg-[#E85D2A] text-white' : 'bg-gray-100 text-gray-600'}`}>Daily Report</button>
-                    <button onClick={() => setCashFilterType('MONTHLY')} className={`px-3 py-1 rounded-lg text-xs font-bold ${cashFilterType === 'MONTHLY' ? 'bg-[#E85D2A] text-white' : 'bg-gray-100 text-gray-600'}`}>Monthly Report</button>
-                    {cashFilterType === 'DAILY' && <input type="date" value={cashFilterDate} onChange={(e) => setCashFilterDate(e.target.value)} className="border rounded-lg px-2 py-1 text-xs" />}
-                    {cashFilterType === 'MONTHLY' && <input type="month" value={cashFilterMonth} onChange={(e) => setCashFilterMonth(e.target.value)} className="border rounded-lg px-2 py-1 text-xs" />}
+                <div className="grid grid-cols-2 divide-x divide-gray-100 bg-white">
+                  <div className="px-4 py-2.5">
+                    <p className="text-[11px] text-gray-400 font-semibold">Today In (+)</p>
+                    <p className="text-sm font-extrabold text-green-600 mt-0.5">Rs. {todayIn.toLocaleString()}</p>
                   </div>
-                  <div className="flex items-center gap-4 text-xs font-bold">
-                    <span className="text-green-600">In: Rs. {filteredIn.toLocaleString()}</span>
-                    <span className="text-red-600">Out: Rs. {filteredOut.toLocaleString()}</span>
-                    <span className="text-gray-800 bg-[#FDF6F0] px-2.5 py-1 rounded-lg">Net: Rs. {(filteredIn - filteredOut).toLocaleString()}</span>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                  <div className="grid grid-cols-4 bg-gray-50 px-4 py-2.5 text-xs font-bold text-gray-500 uppercase border-b">
-                    <span>Date &amp; Detail</span>
-                    <span className="text-right text-green-600">Cash In</span>
-                    <span className="text-right text-red-600">Cash Out</span>
-                    <span className="text-right print:hidden">Action</span>
-                  </div>
-                  <div className="divide-y">
-                    {filteredCash.length === 0 ? (
-                      <p className="p-6 text-center text-gray-400 text-sm">Koi cash entry nahi mili.</p>
-                    ) : (
-                      filteredCash.map((c) => (
-                        <div key={c.id} className="grid grid-cols-4 px-4 py-3.5 items-center text-sm hover:bg-gray-50">
-                          <div>
-                            <p className="font-semibold text-gray-800">{c.desc}</p>
-                            <p className="text-xs text-gray-400">{c.date || 'Today'}</p>
-                          </div>
-                          <div className="text-right font-bold text-green-600">{c.type === 'IN' ? `Rs. ${c.amt.toLocaleString()}` : '—'}</div>
-                          <div className="text-right font-bold text-red-600">{c.type === 'OUT' ? `Rs. ${c.amt.toLocaleString()}` : '—'}</div>
-                          <div className="flex justify-end gap-2 print:hidden">
-                            <button onClick={() => startEditCash(c)} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded"><Edit2 size={15} /></button>
-                            <button onClick={() => deleteCash(c.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 size={15} /></button>
-                          </div>
-                        </div>
-                      ))
-                    )}
+                  <div className="px-4 py-2.5">
+                    <p className="text-[11px] text-gray-400 font-semibold">Today Out (-)</p>
+                    <p className="text-sm font-extrabold text-red-600 mt-0.5">Rs. {todayOut.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
-            );
-          })()
-        }
+
+              {/* Clean Aligned Cash Entry Form */}
+              <div className="bg-white p-3.5 rounded-2xl shadow-xs border border-gray-100 space-y-2.5 print:hidden">
+                {editingCashId && (
+                  <div className="flex justify-between items-center bg-blue-50 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700">
+                    <span>Editing Cash Entry...</span>
+                    <button
+                      onClick={() => { setEditingCashId(null); setInput1(''); setInput2(''); }}
+                      className="underline hover:text-blue-900"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
+                {/* Row 1: Amount & Date side-by-side */}
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    placeholder="Amount (Rs)"
+                    value={input2}
+                    onChange={(e) => setInput2(e.target.value)}
+                    className="w-full border border-gray-200 focus:border-[#E85D2A] outline-none rounded-xl px-3 py-2 text-sm font-bold bg-gray-50/60"
+                  />
+                  <input
+                    type="date"
+                    value={cashDate}
+                    onChange={(e) => setCashDate(e.target.value)}
+                    className="w-full border border-gray-200 focus:border-[#E85D2A] outline-none rounded-xl px-2.5 py-2 text-xs font-semibold text-gray-700 bg-gray-50/60"
+                  />
+                </div>
+
+                {/* Row 2: Full-width Description */}
+                <input
+                  type="text"
+                  placeholder="Cash Description (e.g. Counter Sale, Tea, Fuel)"
+                  value={input1}
+                  onChange={(e) => setInput1(e.target.value)}
+                  className="w-full border border-gray-200 focus:border-[#E85D2A] outline-none rounded-xl px-3 py-2 text-sm bg-gray-50/60"
+                />
+
+                {/* Row 3: Action Buttons */}
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                  <button
+                    onClick={() => handleSaveCash('IN')}
+                    className="bg-green-600 hover:bg-green-700 active:scale-95 text-white py-2.5 rounded-xl text-xs font-extrabold tracking-wide shadow-xs transition"
+                  >
+                    {editingCashId ? 'UPDATE IN (+)' : '+ CASH IN'}
+                  </button>
+                  <button
+                    onClick={() => handleSaveCash('OUT')}
+                    className="bg-red-600 hover:bg-red-700 active:scale-95 text-white py-2.5 rounded-xl text-xs font-extrabold tracking-wide shadow-xs transition"
+                  >
+                    {editingCashId ? 'UPDATE OUT (-)' : '- CASH OUT'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Segmented Filter Tabs & Summary Strip */}
+              <div className="bg-white p-3 rounded-2xl shadow-xs border border-gray-100 space-y-2.5">
+                <div className="grid grid-cols-3 gap-1 bg-gray-100 p-1 rounded-xl print:hidden">
+                  {[
+                    { id: 'ALL', label: 'All' },
+                    { id: 'DAILY', label: 'Daily' },
+                    { id: 'MONTHLY', label: 'Monthly' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setCashFilterType(tab.id)}
+                      className={`py-1.5 rounded-lg text-xs font-bold transition ${cashFilterType === tab.id
+                          ? 'bg-[#E85D2A] text-white shadow-xs'
+                          : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {cashFilterType === 'DAILY' && (
+                  <input
+                    type="date"
+                    value={cashFilterDate}
+                    onChange={(e) => setCashFilterDate(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-semibold print:hidden"
+                  />
+                )}
+                {cashFilterType === 'MONTHLY' && (
+                  <input
+                    type="month"
+                    value={cashFilterMonth}
+                    onChange={(e) => setCashFilterMonth(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-semibold print:hidden"
+                  />
+                )}
+
+                <div className="flex items-center justify-between text-[11px] font-bold pt-0.5 px-1">
+                  <span className="text-green-600">In: Rs. {filteredIn.toLocaleString()}</span>
+                  <span className="text-red-600">Out: Rs. {filteredOut.toLocaleString()}</span>
+                  <span className="text-gray-800 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-md">
+                    Net: Rs. {(filteredIn - filteredOut).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Clean 3-Column Cash Entries List (Tap Row for Edit/Delete) */}
+              <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
+                <div className="grid grid-cols-12 bg-gray-50 px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase border-b border-gray-100">
+                  <span className="col-span-6">Date & Detail</span>
+                  <span className="col-span-3 text-right text-green-600">Cash In</span>
+                  <span className="col-span-3 text-right text-red-600">Cash Out</span>
+                </div>
+
+                <div className="divide-y divide-gray-100">
+                  {filteredCash.length === 0 ? (
+                    <p className="p-8 text-center text-gray-400 text-xs">Koi cash entry nahi mili.</p>
+                  ) : (
+                    filteredCash.map((c) => (
+                      <div
+                        key={c.id}
+                        onClick={() => setSelectedCashPopup(c)}
+                        className="grid grid-cols-12 px-3.5 py-3 items-center text-sm hover:bg-orange-50/50 active:bg-orange-100/60 cursor-pointer transition"
+                      >
+                        <div className="col-span-6 pr-2 min-w-0">
+                          <p className="font-bold text-gray-800 text-xs truncate">{c.desc}</p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">{c.date || 'Today'}</p>
+                        </div>
+                        <div className="col-span-3 text-right font-extrabold text-xs text-green-600">
+                          {c.type === 'IN' ? `Rs. ${c.amt.toLocaleString()}` : '—'}
+                        </div>
+                        <div className="col-span-3 text-right font-extrabold text-xs text-red-600">
+                          {c.type === 'OUT' ? `Rs. ${c.amt.toLocaleString()}` : '—'}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Cash Entry Tap Modal (Edit / Delete) */}
+              {selectedCashPopup && (
+                <div
+                  className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4 print:hidden"
+                  onClick={() => setSelectedCashPopup(null)}
+                >
+                  <div
+                    className="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-start justify-between border-b pb-3">
+                      <div>
+                        <span
+                          className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${selectedCashPopup.type === 'IN'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-700'
+                            }`}
+                        >
+                          {selectedCashPopup.type === 'IN' ? 'CASH IN (+)' : 'CASH OUT (-)'}
+                        </span>
+                        <h3 className="text-2xl font-extrabold text-gray-900 mt-1.5">
+                          Rs. {Number(selectedCashPopup.amt || 0).toLocaleString()}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">{selectedCashPopup.date || 'Today'}</p>
+                        {selectedCashPopup.desc && (
+                          <p className="text-sm font-medium text-gray-700 mt-1">{selectedCashPopup.desc}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setSelectedCashPopup(null)}
+                        className="text-gray-400 hover:text-gray-700 text-lg font-bold px-2"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => {
+                          const cashToEdit = selectedCashPopup;
+                          setSelectedCashPopup(null);
+                          startEditCash(cashToEdit);
+                        }}
+                        className="py-3 rounded-xl bg-blue-50 text-blue-600 font-bold text-sm hover:bg-blue-100 transition flex items-center justify-center gap-2"
+                      >
+                        <Edit2 size={16} /> Edit Entry
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          const cashId = selectedCashPopup.id;
+                          setSelectedCashPopup(null);
+                          deleteCash(cashId);
+                        }}
+                        className="py-3 rounded-xl bg-red-50 text-red-600 font-bold text-sm hover:bg-red-100 transition flex items-center justify-center gap-2"
+                      >
+                        <Trash2 size={16} /> Delete Entry
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* 4. STAFF MODULE */}
         {
