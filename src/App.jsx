@@ -10,6 +10,7 @@ import {
 
 export default function App() {
   const [businesses, setBusinesses] = useState(() => JSON.parse(localStorage.getItem('dk_businesses')) || ['Ali Traders', 'Ali Wholesale Mart']);
+  const [showSideMenu, setShowSideMenu] = useState(false);
   const [currentBiz, setCurrentBiz] = useState(() => localStorage.getItem('dk_current_biz') || 'Ali Traders');
   const [showBizMenu, setShowBizMenu] = useState(false);
   const [activeView, setActiveView] = useState('home');
@@ -1076,12 +1077,18 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#F5F6F8] font-sans text-gray-800">
       {/* Header */}
+
       <header className={`bg-white shadow-sm sticky top-0 z-20 print:hidden ${activeView === 'party' ? 'hidden' : ''}`}>
         <div className="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
           <div className="relative flex items-center gap-3">
-            <button onClick={() => { setActiveView('home'); setSelectedPartyId(null); setShowReport(false); }} className="text-[#E85D2A] p-1 hover:bg-orange-50 rounded">
+            <button
+              onClick={() => setShowSideMenu(true)}
+              className="text-[#E85D2A] p-1 hover:bg-orange-50 rounded"
+              title="Open Menu"
+            >
               <Menu size={24} />
             </button>
+
             <button onClick={() => setShowBizMenu(!showBizMenu)} className="flex items-center gap-1.5 font-bold text-lg text-gray-900 hover:text-[#E85D2A]">
               <span>{currentBiz}</span>
               <ChevronDown size={18} className="text-gray-600" />
@@ -1176,6 +1183,85 @@ export default function App() {
           )}
         </div>
       </header>
+      {/* Side Navigation Drawer */}
+      {showSideMenu && (
+        <div className="fixed inset-0 z-50 flex print:hidden">
+          {/* Dark Overlay */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs"
+            onClick={() => setShowSideMenu(false)}
+          />
+
+          {/* Drawer Panel */}
+          <div className="relative w-72 max-w-[80vw] bg-white h-full shadow-2xl flex flex-col justify-between z-10 animate-fade-in">
+            <div>
+              {/* Drawer Header */}
+              <div className="bg-gradient-to-r from-[#E85D2A] to-[#F37A3F] p-5 text-white">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-extrabold text-lg truncate">{currentBiz}</h2>
+                  <button
+                    onClick={() => setShowSideMenu(false)}
+                    className="text-white/90 hover:text-white text-xl font-bold px-2"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className="text-xs text-orange-100 mt-1">
+                  {session?.user?.email ? session.user.email.replace('@khata.app', '') : 'Offline Mode'} • {syncStatus}
+                </p>
+              </div>
+
+              {/* Menu Links */}
+              <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-170px)]">
+                {[
+                  { id: 'home', label: 'Home Dashboard' },
+                  { id: 'party', label: 'Party Khata' },
+                  { id: 'cash', label: 'Cash Book' },
+                  { id: 'staff', label: 'Staff & Salary' },
+                  { id: 'expense', label: 'Expenses' },
+                  { id: 'items', label: 'Stock / Items' },
+                  { id: 'calculator', label: 'Smart Calculator' },
+                  { id: 'monthly', label: 'Monthly Chart' },
+                  { id: 'sheet', label: '30 Days Sheet' },
+                  { id: 'backup', label: 'Data Backups' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveView(item.id);
+                      setSelectedPartyId(null);
+                      setShowReport(false);
+                      setShowSideMenu(false);
+                    }}
+                    className={`w-full text-left px-4 py-2.5 rounded-xl font-semibold text-sm transition ${activeView === item.id
+                        ? 'bg-orange-50 text-[#E85D2A] font-bold'
+                        : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {/* Drawer Footer: Logout */}
+            <div className="p-4 border-t bg-gray-50">
+              {session?.user && (
+                <button
+                  onClick={async () => {
+                    setShowSideMenu(false);
+                    await supabase.auth.signOut();
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-red-50 text-red-600 font-bold text-sm hover:bg-red-100 transition"
+                >
+                  Logout Account
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <main className="max-w-4xl mx-auto p-4 md:p-6">
         {/* HOME SCREEN */}
@@ -3006,4 +3092,5 @@ export default function App() {
           })()}
       </main >
     </div >
-  );}
+  );
+}
