@@ -47,6 +47,21 @@ export default function App() {
   const [editingExpId, setEditingExpId] = useState(null);
   const [expFilterMonth, setExpFilterMonth] = useState('ALL');
   const [expDeductCash, setExpDeductCash] = useState(false);
+  const rawDate = now.toISOString().split('T')[0];
+
+  // DigiKhata-Style Expense UI States
+  const [selectedExpCat, setSelectedExpCat] = useState(null);
+  const [expCatSearch, setExpCatSearch] = useState('');
+  const [expSortBy, setExpSortBy] = useState('RECENT'); // 'RECENT', 'HIGHEST', 'OLDEST', 'LEAST'
+  const [tempExpSortBy, setTempExpSortBy] = useState('RECENT');
+  const [showExpSortModal, setShowExpSortModal] = useState(false);
+  const [expEntrySearch, setExpEntrySearch] = useState('');
+  const [showExpCalcModal, setShowExpCalcModal] = useState(false);
+  const [expCalcExpr, setExpCalcExpr] = useState('');
+  const [expCalcNote, setExpCalcNote] = useState('');
+  const [selectedExpPopup, setSelectedExpPopup] = useState(null);
+  const [showExpCatMenu, setShowExpCatMenu] = useState(false);
+
   // Smart Calculator States
   const [calcHistory, setCalcHistory] = useState([]);
   const [calcTargetParty, setCalcTargetParty] = useState('');
@@ -2271,8 +2286,8 @@ export default function App() {
                       key={tab.id}
                       onClick={() => setCashFilterType(tab.id)}
                       className={`py-1.5 rounded-lg text-xs font-bold transition ${cashFilterType === tab.id
-                          ? 'bg-[#E85D2A] text-white shadow-xs'
-                          : 'text-gray-600 hover:text-gray-900'
+                        ? 'bg-[#E85D2A] text-white shadow-xs'
+                        : 'text-gray-600 hover:text-gray-900'
                         }`}
                     >
                       {tab.label}
@@ -2354,8 +2369,8 @@ export default function App() {
                       <div>
                         <span
                           className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${selectedCashPopup.type === 'IN'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-red-100 text-red-700'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
                             }`}
                         >
                           {selectedCashPopup.type === 'IN' ? 'CASH IN (+)' : 'CASH OUT (-)'}
@@ -2575,729 +2590,809 @@ export default function App() {
           })()
         }
 
-        {/* 5. UPGRADED EXPENSE MODULE (Categories, Date, Edit/Delete, Monthly Report) */}
-        {
-          activeView === 'expense' && (() => {
-            const todayStr = new Date().toISOString().split('T')[0];
-            const filteredExpenses = expenses.filter(ex => {
-              if (expFilterMonth === 'ALL') return true;
-              const rDate = ex.rawDate || todayStr;
-              return rDate.startsWith(expFilterMonth);
-            });
+        {/* 5. DIGIKHATA-STYLE EXPENSE MODULE (Categories -> Ledger -> Calculator Entry) */}
+        {activeView === 'expense' && (() => {
+          const currentMonthPrefix = new Date().toISOString().slice(0, 7);
+          const currentMonthName = new Date().toLocaleDateString('en-US', { month: 'long' });
 
-            const filteredTotal = filteredExpenses.reduce((sum, ex) => sum + (Number(ex.amt) || 0), 0);
+          const monthTotalExpense = (expenses || [])
+            .filter((ex) => (ex.rawDate || currentMonthPrefix).startsWith(currentMonthPrefix))
+            .reduce((sum, ex) => sum + (Number(ex.amt) || 0), 0);
 
+          // Group expenses by category (account)
+          const catMap = {};
+          (expenses || []).forEach((ex) => {
+            const catName = (ex.category || 'General').trim();
+            if (!catMap[catName]) {
+              catMap[catName] = {
+                name: catName,
+                total: 0,
+                latestId: 0,
+                latestDate: ex.date || 'Today',
+                entries: [],
+              };
+            }
+            catMap[catName].total += Number(ex.amt) || 0;
+            catMap[catName].entries.push(ex);
+            if ((ex.id || 0) >= catMap[catName].latestId) {
+              catMap[catName].latestId = ex.id || 0;
+              catMap[catName].latestDate = ex.date || 'Today';
+            }
+          });
+
+          // Ensure newly created empty category also appears if selected
+          if (selectedExpCat && !catMap[selectedExpCat]) {
+            catMap[selectedExpCat] = {
+              name: selectedExpCat,
+              total: 0,
+              latestId: Date.now(),
+              latestDate: 'New Category',
+              entries: [],
+            };
+          }
+
+          let categoryList = Object.values(catMap).filter((c) =>
+            c.name.toLowerCase().includes(expCatSearch.toLowerCase())
+          );
+
+          if (expSortBy === 'RECENT') categoryList.sort((a, b) => b.latestId - a.latestId);
+          if (expSortBy === 'OLDEST') categoryList.sort((a, b) => a.latestId - b.latestId);
+          if (expSortBy === 'HIGHEST') categoryList.sort((a, b) => b.total - a.total);
+          if (expSortBy === 'LEAST') categoryList.sort((a, b) => a.total - b.total);
+
+          // Helper to evaluate calculator string safely
+          const evalExpCalc = (expr) => {
+            try {
+              const cleaned = String(expr).replace(/×/g, '*').replace(/÷/g, '/').replace(/[^0-9+\-*/.%]/g, '');
+              if (!cleaned) return 0;
+              // eslint-disable-next-line no-new-func
+              const val = Function(`"use strict"; return (${cleaned})`)();
+              return isFinite(val) ? Math.round(val * 100) / 100 : 0;
+            } catch {
+              return Number(expr) || 0;
+            }
+          };
+
+          const handleExpCalcKey = (key) => {
+            if (key === 'AC') {
+              setExpCalcExpr('');
+              return;
+            }
+            if (key === 'BACK') {
+              setExpCalcExpr((prev) => prev.slice(0, -1));
+              return;
+            }
+            if (key === '=') {
+              const res = evalExpCalc(expCalcExpr);
+              setExpCalcExpr(res ? String(res) : '');
+              return;
+            }
+            if (key === '%') {
+              const res = evalExpCalc(expCalcExpr) / 100;
+              setExpCalcExpr(res ? String(res) : '');
+              return;
+            }
+            setExpCalcExpr((prev) => prev + key);
+          };
+
+          const handleSaveCalcExpense = () => {
+            const finalAmt = evalExpCalc(expCalcExpr);
+            if (!finalAmt || finalAmt <= 0 || !selectedExpCat) {
+              alert('Please valid amount enter karein!');
+              return;
+            }
+            const now = new Date();
+            const rawDate = now.toISOString().split('T')[0];
+            const datePart = now.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: '2-digit' });
+            const timePart = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            const formattedDate = `${datePart} • ${timePart}`;
+
+            if (editingExpId) {
+              const updated = expenses.map((ex) =>
+                ex.id === editingExpId
+                  ? { ...ex, amt: finalAmt, title: expCalcNote.trim() || selectedExpCat, category: selectedExpCat }
+                  : ex
+              );
+              updateExpenses(updated);
+            } else {
+              const newEx = {
+                id: Date.now(),
+                title: expCalcNote.trim() || selectedExpCat,
+                amt: finalAmt,
+                category: selectedExpCat,
+                date: formattedDate,
+                rawDate,
+              };
+              updateExpenses([newEx, ...(expenses || [])]);
+
+              if (expDeductCash) {
+                updateCash([
+                  {
+                    id: Date.now() + 1,
+                    desc: `Expense: ${selectedExpCat}${expCalcNote.trim() ? ` (${expCalcNote.trim()})` : ''}`,
+                    amt: finalAmt,
+                    type: 'OUT',
+                    date: formattedDate,
+                    rawDate,
+                  },
+                  ...(cashEntries || []),
+                ]);
+              }
+            }
+
+            setEditingExpId(null);
+            setExpCalcExpr('');
+            setExpCalcNote('');
+            setShowExpCalcModal(false);
+          };
+
+          // =========================================================
+          // SCREEN 3: FULL-SCREEN CALCULATOR EXPENSE ENTRY
+          // =========================================================
+          if (showExpCalcModal && selectedExpCat) {
             return (
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold">My Expenses — {currentBiz}</h2>
-                  <button
-                    onClick={() => window.print()}
-                    className="bg-[#E85D2A] text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-[#d44e1d] print:hidden"
-                  >
-                    <Printer size={14} /> Print / PDF Report
-                  </button>
-                </div>
-
-                {/* Expense Summary Cards */}
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border-l-4 border-red-500">
-                    <p className="text-[11px] sm:text-xs text-gray-500 leading-tight">Total Expenses</p>
-                    <p className="text-base sm:text-2xl font-bold text-red-600 mt-0.5 truncate">Rs. {totalExpense.toLocaleString()}</p>
-                  </div>
-                  <div className="bg-white p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border-l-4 border-amber-500">
-                    <p className="text-[11px] sm:text-xs text-gray-500 leading-tight truncate">
-                      {expFilterMonth === 'ALL' ? 'Showing All' : `Month (${expFilterMonth})`}
-                    </p>
-                    <p className="text-base sm:text-2xl font-bold text-amber-600 mt-0.5 truncate">Rs. {filteredTotal.toLocaleString()}</p>
-                  </div>
-                </div>
-
-                {/* Add / Edit Expense Form */}
-                <form onSubmit={handleSaveExpense} className="bg-white p-3 rounded-2xl shadow-sm space-y-2 print:hidden">
-                  {editingExpId && (
-                    <div className="flex justify-between items-center text-xs font-bold text-blue-600">
-                      <span>Editing Expense...</span>
-                      <button type="button" onClick={() => { setEditingExpId(null); setInput1(''); setInput2(''); }} className="underline">
-                        Cancel Edit
-                      </button>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-2 gap-2">
-                    <select
-                      value={expCategory}
-                      onChange={(e) => setExpCategory(e.target.value)}
-                      className="border rounded-lg px-2 py-1.5 text-xs sm:text-sm font-medium bg-gray-50 w-full"
+              <div className="fixed inset-0 z-50 bg-[#F5F6F8] flex flex-col justify-between max-w-md mx-auto shadow-2xl">
+                {/* Deep Red Header */}
+                <div>
+                  <div className="bg-[#B91C1C] text-white px-4 py-3.5 flex items-center gap-3 shadow-sm">
+                    <button
+                      onClick={() => {
+                        setShowExpCalcModal(false);
+                        setEditingExpId(null);
+                        setExpCalcExpr('');
+                        setExpCalcNote('');
+                      }}
+                      className="p-1 hover:bg-white/15 rounded-full text-lg font-bold"
                     >
-                      <option value="Electricity / Bijli">Electricity / Bijli</option>
-                      <option value="Rent / Kiraya">Rent / Kiraya</option>
-                      <option value="Tea / Refreshment">Tea / Refreshment</option>
-                      <option value="Transport / Petrol">Transport / Petrol</option>
-                      <option value="Repair / Maintenance">Repair / Maintenance</option>
-                      <option value="Other">Other</option>
-                    </select>
-                    <input
-                      type="date"
-                      value={expDate}
-                      onChange={(e) => setExpDate(e.target.value)}
-                      className="border rounded-lg px-2 py-1.5 text-xs sm:text-sm w-full"
-                    />
+                      ‹
+                    </button>
+                    <h2 className="font-bold text-base truncate">
+                      {editingExpId ? `Edit Expense - ${selectedExpCat}` : `Expense - ${selectedExpCat}`}
+                    </h2>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  {/* Amount & Note Inputs */}
+                  <div className="p-4 space-y-3 bg-white rounded-b-3xl shadow-xs">
+                    <div className="flex items-center justify-between border-2 border-red-200 focus-within:border-[#B91C1C] rounded-2xl px-4 py-3 bg-gray-50/50">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="text-gray-400 font-bold text-base">Rs</span>
+                        <input
+                          type="text"
+                          readOnly
+                          value={expCalcExpr}
+                          placeholder="0"
+                          className="w-full bg-transparent text-2xl font-extrabold text-gray-900 outline-none"
+                        />
+                      </div>
+                      {expCalcExpr && (
+                        <button
+                          onClick={() => handleExpCalcKey('BACK')}
+                          className="text-gray-500 hover:text-red-600 px-2 py-1 text-lg font-bold"
+                        >
+                          ⌫
+                        </button>
+                      )}
+                    </div>
+
                     <input
                       type="text"
-                      required
-                      placeholder="Expense Detail (e.g., Bill)"
-                      value={input1}
-                      onChange={(e) => setInput1(e.target.value)}
-                      className="border rounded-lg px-2.5 py-1.5 text-xs sm:text-sm w-full"
+                      placeholder="Enter detail / note (optional)"
+                      value={expCalcNote}
+                      onChange={(e) => setExpCalcNote(e.target.value)}
+                      className="w-full border border-gray-200 focus:border-[#B91C1C] outline-none rounded-xl px-3.5 py-2.5 text-sm bg-gray-50/60"
                     />
-                    <input
-                      type="number"
-                      required
-                      placeholder="Amount (Rs)"
-                      value={input2}
-                      onChange={(e) => setInput2(e.target.value)}
-                      className="border rounded-lg px-2.5 py-1.5 text-xs sm:text-sm font-bold w-full"
-                    />
-                  </div>
 
-                  <div className="flex items-center justify-between gap-2 pt-0.5">
-                    {!editingExpId ? (
-                      <label className="flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold text-gray-600 cursor-pointer leading-tight">
+                    {!editingExpId && (
+                      <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 cursor-pointer pt-1">
                         <input
                           type="checkbox"
                           checked={expDeductCash}
                           onChange={(e) => setExpDeductCash(e.target.checked)}
-                          className="accent-[#E85D2A] w-3.5 h-3.5 shrink-0"
+                          className="accent-[#B91C1C] w-4 h-4"
                         />
-                        <span>Galla se minus karein</span>
+                        <span>Cash in Hand (Galla) se bhi minus karein</span>
                       </label>
-                    ) : <span />}
-
-                    <button
-                      type="submit"
-                      className="bg-[#E85D2A] hover:bg-[#d44e1d] text-white px-4 py-1.5 rounded-lg font-bold text-xs sm:text-sm flex items-center gap-1 shrink-0"
-                    >
-                      <Plus size={15} /> {editingExpId ? 'Update' : 'Add Expense'}
-                    </button>
+                    )}
                   </div>
-                </form>
-
-
-                {/* Monthly Report Filter Bar */}
-                <div className="bg-white p-3.5 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-3 border border-orange-100 print:hidden">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-gray-500 uppercase">Filter by Month:</span>
-                    <button
-                      onClick={() => setExpFilterMonth('ALL')}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold ${expFilterMonth === 'ALL' ? 'bg-[#E85D2A] text-white' : 'bg-gray-100 text-gray-600'}`}
-                    >
-                      All Expenses
-                    </button>
-                    <input
-                      type="month"
-                      value={expFilterMonth === 'ALL' ? new Date().toISOString().slice(0, 7) : expFilterMonth}
-                      onChange={(e) => setExpFilterMonth(e.target.value)}
-                      className="border rounded-lg px-2.5 py-1 text-xs"
-                    />
-                  </div>
-                  <span className="text-xs font-bold text-gray-600">
-                    Count: {filteredExpenses.length} Expenses
-                  </span>
                 </div>
 
-                {/* Expenses List */}
-                <div className="bg-white rounded-2xl shadow-sm divide-y">
-                  {filteredExpenses.length === 0 ? (
-                    <p className="p-6 text-center text-gray-400 text-sm">Is mahine ka koi expense record nahi mila.</p>
-                  ) : (
-                    filteredExpenses.map((ex) => (
-                      <div key={ex.id} className="p-4 flex flex-wrap justify-between items-center gap-3 hover:bg-gray-50">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900">{ex.title}</span>
-                            <span className="text-xs bg-[#FDF6F0] text-[#E85D2A] px-2.5 py-0.5 rounded-full font-semibold">
-                              {ex.category || 'General'}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-400 mt-0.5">{ex.date || 'Today'}</p>
-                        </div>
+                {/* SAVE Button + Calculator Keypad */}
+                <div className="p-3 bg-[#ECEEF2] space-y-2.5">
+                  <button
+                    onClick={handleSaveCalcExpense}
+                    className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#B91C1C] to-[#991B1B] text-white font-extrabold text-sm tracking-wider shadow-md active:scale-95 transition"
+                  >
+                    SAVE
+                  </button>
 
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold text-lg text-red-600">Rs. {Number(ex.amt).toLocaleString()}</span>
-                          <button
-                            onClick={() => startEditExpense(ex)}
-                            title="Edit Expense"
-                            className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg print:hidden"
-                          >
-                            <Edit2 size={15} />
-                          </button>
-                          <button
-                            onClick={() => deleteExpense(ex.id)}
-                            title="Delete Expense"
-                            className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg print:hidden"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
+                  <div className="grid grid-cols-4 gap-2 text-center select-none">
+                    {[
+                      { label: 'AC', val: 'AC', cls: 'bg-gray-300 text-gray-800 font-bold' },
+                      { label: 'C', val: 'AC', cls: 'bg-gray-300 text-gray-800 font-bold' },
+                      { label: '%', val: '%', cls: 'bg-gray-300 text-gray-800 font-bold' },
+                      { label: '⌫', val: 'BACK', cls: 'bg-gray-300 text-gray-800 font-bold' },
+                      { label: '7', val: '7', cls: 'bg-white text-gray-900 font-bold' },
+                      { label: '8', val: '8', cls: 'bg-white text-gray-900 font-bold' },
+                      { label: '9', val: '9', cls: 'bg-white text-gray-900 font-bold' },
+                      { label: '÷', val: '÷', cls: 'bg-gray-300 text-gray-800 font-bold text-lg' },
+                      { label: '4', val: '4', cls: 'bg-white text-gray-900 font-bold' },
+                      { label: '5', val: '5', cls: 'bg-white text-gray-900 font-bold' },
+                      { label: '6', val: '6', cls: 'bg-white text-gray-900 font-bold' },
+                      { label: '×', val: '×', cls: 'bg-gray-300 text-gray-800 font-bold text-lg' },
+                      { label: '1', val: '1', cls: 'bg-white text-gray-900 font-bold' },
+                      { label: '2', val: '2', cls: 'bg-white text-gray-900 font-bold' },
+                      { label: '3', val: '3', cls: 'bg-white text-gray-900 font-bold' },
+                      { label: '-', val: '-', cls: 'bg-gray-300 text-gray-800 font-bold text-lg' },
+                      { label: '0', val: '0', cls: 'bg-white text-gray-900 font-bold' },
+                      { label: '.', val: '.', cls: 'bg-white text-gray-900 font-bold' },
+                      { label: '=', val: '=', cls: 'bg-gray-300 text-gray-800 font-bold text-lg' },
+                      { label: '+', val: '+', cls: 'bg-gray-300 text-gray-800 font-bold text-lg' },
+                    ].map((btn, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleExpCalcKey(btn.val)}
+                        className={`py-3.5 rounded-xl shadow-2xs active:scale-95 transition text-base ${btn.cls}`}
+                      >
+                        {btn.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             );
-          })()
-        }
+          }
+
+          // =========================================================
 
 
-        {/* 6. UPGRADED AUTOMATIC CALCULATOR (Live Math + Keypad + Send to Cash/Party) */}
-        {
-          activeView === 'calculator' && (
-            <div className="max-w-lg mx-auto space-y-4">
-              <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 space-y-4">
+          {/* 6. UPGRADED AUTOMATIC CALCULATOR (Live Math + Keypad + Send to Cash/Party) */ }
+          {
+            activeView === 'calculator' && (
+              <div className="max-w-lg mx-auto space-y-4">
+                <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-gray-800">Automatic Business Calculator</h2>
+                    <span className="text-xs bg-[#FDF6F0] text-[#E85D2A] font-bold px-2.5 py-1 rounded-full">
+                      Live Auto-Total
+                    </span>
+                  </div>
+
+                  {/* Expression Input + Live Automatic Total Display */}
+                  <div className="bg-[#FDF6F0] p-4 rounded-2xl border border-orange-100 space-y-2">
+                    <input
+                      type="text"
+                      value={calcInput}
+                      onChange={(e) => handleCalc(e.target.value)}
+                      placeholder="Type or tap buttons (e.g. 450*12+300)"
+                      className="w-full bg-transparent text-right text-lg font-mono text-gray-600 focus:outline-none"
+                    />
+                    <div className="flex justify-between items-baseline border-t border-orange-200/60 pt-2">
+                      <span className="text-xs font-bold text-gray-400 uppercase">Total</span>
+                      <span className="text-3xl font-extrabold text-[#E85D2A]">
+                        Rs. {Number(calcResult).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Interactive Keypad */}
+                  <div className="grid grid-cols-4 gap-2">
+                    {['AC', '%', '/', 'BACK', '7', '8', '9', '*', '4', '5', '6', '-', '1', '2', '3', '+', '0', '00', '.', '='].map((btn) => (
+                      <button
+                        key={btn}
+                        type="button"
+                        onClick={() => handleMainCalcBtn(btn)}
+                        className={`py-3.5 rounded-2xl font-bold text-lg shadow-sm active:scale-95 transition ${btn === '='
+                          ? 'bg-[#E85D2A] text-white'
+                          : btn === 'AC'
+                            ? 'bg-red-100 text-red-600'
+                            : ['%', '/', '*', '-', '+', 'BACK'].includes(btn)
+                              ? 'bg-[#FDF6F0] text-[#E85D2A]'
+                              : 'bg-gray-50 hover:bg-gray-100 text-gray-900'
+                          }`}
+                      >
+                        {btn === 'BACK' ? '⌫' : btn}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Direct Send Total to Cash Book or Party Khata */}
+                  <div className="bg-gray-50 p-3.5 rounded-2xl space-y-2.5 border border-gray-200/70">
+                    <p className="text-xs font-bold text-gray-500 uppercase">Send Total Directly To Ledger:</p>
+                    <input
+                      type="text"
+                      placeholder="Optional Detail / Note (e.g., 12 Cartons)"
+                      value={calcNote}
+                      onChange={(e) => setCalcNote(e.target.value)}
+                      className="w-full bg-white border rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    />
+
+                    {/* Send to Cash Buttons */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => sendCalcToCash('IN')}
+                        className="bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl text-xs font-bold"
+                      >
+                        + Save to Cash In
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => sendCalcToCash('OUT')}
+                        className="bg-red-600 hover:bg-red-700 text-white py-2 rounded-xl text-xs font-bold"
+                      >
+                        - Save to Cash Out
+                      </button>
+                    </div>
+
+                    {/* Send to Selected Party Khata */}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <select
+                        value={calcTargetParty}
+                        onChange={(e) => setCalcTargetParty(e.target.value)}
+                        className="border rounded-xl px-2.5 py-2 text-xs bg-white flex-1 min-w-[140px]"
+                      >
+                        <option value="">-- Select Party --</option>
+                        {parties.map(p => (
+                          <option key={p.id} value={p.id}>{p.name} ({p.type})</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => sendCalcToParty('GAVE')}
+                        className="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-2 rounded-xl text-xs font-bold"
+                      >
+                        You Gave
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => sendCalcToParty('GOT')}
+                        className="bg-green-100 text-green-700 hover:bg-green-200 px-3 py-2 rounded-xl text-xs font-bold"
+                      >
+                        You Got
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calculation History Tape */}
+                {calcHistory.length > 0 && (
+                  <div className="bg-white p-4 rounded-2xl shadow-sm space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-gray-500 uppercase">Recent Calculations</span>
+                      <button onClick={() => setCalcHistory([])} className="text-xs text-red-500 hover:underline">Clear</button>
+                    </div>
+                    <div className="divide-y text-xs">
+                      {calcHistory.map(h => (
+                        <div
+                          key={h.id}
+                          onClick={() => { setCalcInput(String(h.res)); setCalcResult(h.res); }}
+                          className="py-2 flex justify-between cursor-pointer hover:bg-orange-50/50 px-1 rounded"
+                        >
+                          <span className="text-gray-600 font-mono">{h.expr}</span>
+                          <span className="font-bold text-[#E85D2A]">= Rs. {Number(h.res).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          }
+
+          {/* 7. UPGRADED ALL BACKUPS (Auto-Sync Status + JSON Backup/Restore + Excel CSV Export) */ }
+          {
+            activeView === 'backups' && (
+              <div className="max-w-2xl mx-auto space-y-5">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-gray-800">Automatic Business Calculator</h2>
-                  <span className="text-xs bg-[#FDF6F0] text-[#E85D2A] font-bold px-2.5 py-1 rounded-full">
-                    Live Auto-Total
+                  <h2 className="text-xl font-bold">All Backups & Data Safety — {currentBiz}</h2>
+                  <span className="text-xs bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full">
+                    ● Auto-Sync Active
                   </span>
                 </div>
 
-                {/* Expression Input + Live Automatic Total Display */}
-                <div className="bg-[#FDF6F0] p-4 rounded-2xl border border-orange-100 space-y-2">
-                  <input
-                    type="text"
-                    value={calcInput}
-                    onChange={(e) => handleCalc(e.target.value)}
-                    placeholder="Type or tap buttons (e.g. 450*12+300)"
-                    className="w-full bg-transparent text-right text-lg font-mono text-gray-600 focus:outline-none"
-                  />
-                  <div className="flex justify-between items-baseline border-t border-orange-200/60 pt-2">
-                    <span className="text-xs font-bold text-gray-400 uppercase">Total</span>
-                    <span className="text-3xl font-extrabold text-[#E85D2A]">
-                      Rs. {Number(calcResult).toLocaleString()}
-                    </span>
+                {/* Live Record Count Summary */}
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                  <p className="text-xs font-bold text-gray-400 uppercase mb-3">Saved Records in Database</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    <div className="bg-[#FDF6F0] p-3 rounded-xl">
+                      <p className="text-2xl font-extrabold text-[#E85D2A]">{parties.length}</p>
+                      <p className="text-xs font-semibold text-gray-600 mt-0.5">Parties</p>
+                    </div>
+                    <div className="bg-[#FDF6F0] p-3 rounded-xl">
+                      <p className="text-2xl font-extrabold text-[#E85D2A]">{cashEntries.length}</p>
+                      <p className="text-xs font-semibold text-gray-600 mt-0.5">Cash Entries</p>
+                    </div>
+                    <div className="bg-[#FDF6F0] p-3 rounded-xl">
+                      <p className="text-2xl font-extrabold text-[#E85D2A]">{staffList.length}</p>
+                      <p className="text-xs font-semibold text-gray-600 mt-0.5">Staff Members</p>
+                    </div>
+                    <div className="bg-[#FDF6F0] p-3 rounded-xl">
+                      <p className="text-2xl font-extrabold text-[#E85D2A]">{expenses.length}</p>
+                      <p className="text-xs font-semibold text-gray-600 mt-0.5">Expenses</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Interactive Keypad */}
-                <div className="grid grid-cols-4 gap-2">
-                  {['AC', '%', '/', 'BACK', '7', '8', '9', '*', '4', '5', '6', '-', '1', '2', '3', '+', '0', '00', '.', '='].map((btn) => (
+                {/* Full Backup Download & Restore Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Download Full Backup */}
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-orange-100 flex flex-col justify-between space-y-4">
+                    <div>
+                      <h3 className="font-bold text-base text-gray-900">1. Download Full Backup</h3>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Apne poore khate ki ek safe copy (.JSON) apne computer ya USB mein download karein.
+                      </p>
+                    </div>
                     <button
-                      key={btn}
-                      type="button"
-                      onClick={() => handleMainCalcBtn(btn)}
-                      className={`py-3.5 rounded-2xl font-bold text-lg shadow-sm active:scale-95 transition ${btn === '='
-                        ? 'bg-[#E85D2A] text-white'
-                        : btn === 'AC'
-                          ? 'bg-red-100 text-red-600'
-                          : ['%', '/', '*', '-', '+', 'BACK'].includes(btn)
-                            ? 'bg-[#FDF6F0] text-[#E85D2A]'
-                            : 'bg-gray-50 hover:bg-gray-100 text-gray-900'
-                        }`}
+                      onClick={exportBackup}
+                      className="w-full bg-[#E85D2A] hover:bg-[#d44e1d] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition"
                     >
-                      {btn === 'BACK' ? '⌫' : btn}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Direct Send Total to Cash Book or Party Khata */}
-                <div className="bg-gray-50 p-3.5 rounded-2xl space-y-2.5 border border-gray-200/70">
-                  <p className="text-xs font-bold text-gray-500 uppercase">Send Total Directly To Ledger:</p>
-                  <input
-                    type="text"
-                    placeholder="Optional Detail / Note (e.g., 12 Cartons)"
-                    value={calcNote}
-                    onChange={(e) => setCalcNote(e.target.value)}
-                    className="w-full bg-white border rounded-xl px-3 py-2 text-xs focus:outline-none"
-                  />
-
-                  {/* Send to Cash Buttons */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => sendCalcToCash('IN')}
-                      className="bg-green-600 hover:bg-green-700 text-white py-2 rounded-xl text-xs font-bold"
-                    >
-                      + Save to Cash In
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => sendCalcToCash('OUT')}
-                      className="bg-red-600 hover:bg-red-700 text-white py-2 rounded-xl text-xs font-bold"
-                    >
-                      - Save to Cash Out
+                      <Download size={17} /> Download Backup (.JSON)
                     </button>
                   </div>
 
-                  {/* Send to Selected Party Khata */}
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <select
-                      value={calcTargetParty}
-                      onChange={(e) => setCalcTargetParty(e.target.value)}
-                      className="border rounded-xl px-2.5 py-2 text-xs bg-white flex-1 min-w-[140px]"
-                    >
-                      <option value="">-- Select Party --</option>
-                      {parties.map(p => (
-                        <option key={p.id} value={p.id}>{p.name} ({p.type})</option>
-                      ))}
-                    </select>
+                  {/* Restore / Upload Backup */}
+                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-blue-100 flex flex-col justify-between space-y-4">
+                    <div>
+                      <h3 className="font-bold text-base text-gray-900">2. Restore Old Backup</h3>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Purani download ki hui .JSON backup file upload karke apna saara data wapas layein.
+                      </p>
+                    </div>
+                    <label className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition">
+                      <Database size={17} /> Upload & Restore (.JSON)
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={handleRestoreBackup}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Excel (.CSV) Export Section */}
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-green-100 space-y-3">
+                  <div>
+                    <h3 className="font-bold text-base text-gray-900">3. Export to Microsoft Excel (.CSV)</h3>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Apna Party Khata ya Cash Book seedha Excel sheet mein kholne ke liye download karein.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     <button
-                      type="button"
-                      onClick={() => sendCalcToParty('GAVE')}
-                      className="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-2 rounded-xl text-xs font-bold"
+                      onClick={exportPartiesExcel}
+                      className="bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition"
                     >
-                      You Gave
+                      <Download size={15} /> Export Party Khata (Excel)
                     </button>
                     <button
-                      type="button"
-                      onClick={() => sendCalcToParty('GOT')}
-                      className="bg-green-100 text-green-700 hover:bg-green-200 px-3 py-2 rounded-xl text-xs font-bold"
+                      onClick={exportCashExcel}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition"
                     >
-                      You Got
+                      <Download size={15} /> Export Cash Book (Excel)
                     </button>
                   </div>
                 </div>
               </div>
+            )
+          }
+          {/* 8. MONTHLY LOG CHART + ANALYTICS & PROGRESS SUMMARY */ }
+          {
+            activeView === 'monthly-chart' && (() => {
+              const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+              const monthKey = `${logYear}-${String(logMonthIdx + 1).padStart(2, '0')}`;
+              const daysInMonth = new Date(logYear, logMonthIdx + 1, 0).getDate();
+              const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-              {/* Calculation History Tape */}
-              {calcHistory.length > 0 && (
-                <div className="bg-white p-4 rounded-2xl shadow-sm space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-gray-500 uppercase">Recent Calculations</span>
-                    <button onClick={() => setCalcHistory([])} className="text-xs text-red-500 hover:underline">Clear</button>
-                  </div>
-                  <div className="divide-y text-xs">
-                    {calcHistory.map(h => (
-                      <div
-                        key={h.id}
-                        onClick={() => { setCalcInput(String(h.res)); setCalcResult(h.res); }}
-                        className="py-2 flex justify-between cursor-pointer hover:bg-orange-50/50 px-1 rounded"
+              const todayObj = new Date();
+              const isCurrentMonth = todayObj.getFullYear() === logYear && todayObj.getMonth() === logMonthIdx;
+              const todayDay = todayObj.getDate();
+
+              const columns = [
+                { key: 'counterSale', label: 'COUNTER SALE', bg: 'bg-[#0D9488]', text: 'text-emerald-700' },
+                { key: 'hamzaSupplier', label: 'HAMZA SUPPLIER', bg: 'bg-[#1D4ED8]', text: 'text-gray-900' },
+                { key: 'arsalanBhai', label: 'ARSALAN BHAI', bg: 'bg-[#38BDF8]', text: 'text-gray-900' },
+                { key: 'makkahPlant', label: 'MAKKAH PLANT', bg: 'bg-[#F43F5E]', text: 'text-gray-900' },
+                { key: 'juttPlant', label: 'JUTT PLANT', bg: 'bg-[#FACC15] !text-gray-900', text: 'text-gray-900' },
+                { key: 'totalSupply', label: 'TOTAL SUPPLY', bg: 'bg-[#2563EB]', text: 'text-blue-600' },
+                { key: 'borrowBottles', label: 'BORROW BOTTLES', bg: 'bg-[#EF4444]', text: 'text-red-600' },
+                { key: 'fuelExp', label: 'FUEL EXP.', bg: 'bg-[#6B7280]', text: 'text-gray-600' },
+                { key: 'otherExp', label: 'OTHER EXP.', bg: 'bg-[#374151]', text: 'text-gray-800' },
+              ];
+
+              const currentMonthData = logChartData[monthKey] || {};
+
+              const changeMonth = (dir) => {
+                let nextM = logMonthIdx + dir;
+                let nextY = logYear;
+                if (nextM < 0) { nextM = 11; nextY -= 1; }
+                if (nextM > 11) { nextM = 0; nextY += 1; }
+                setLogMonthIdx(nextM);
+                setLogYear(nextY);
+              };
+
+              // Calculate Live Column Totals
+              const colTotals = {};
+              columns.forEach(c => {
+                colTotals[c.key] = daysArray.reduce((sum, d) => sum + (Number(currentMonthData[d]?.[c.key]) || 0), 0);
+              });
+
+              // Summary Cards Configuration (All 9 Cards in 3x3 Grid)
+              const summaryCards = [
+                { title: 'Total Supply', value: colTotals.totalSupply.toLocaleString(), bg: 'bg-[#0284C7]' },
+                { title: 'Total Counter Sales', value: `Rs. ${colTotals.counterSale.toLocaleString()}`, bg: 'bg-[#15803D]' },
+                { title: 'Hamza Supplier Total', value: colTotals.hamzaSupplier.toLocaleString(), bg: 'bg-[#4338CA]' },
+                { title: 'Arsalan Bhai Total', value: colTotals.arsalanBhai.toLocaleString(), bg: 'bg-[#38BDF8]' },
+                { title: 'Makkah Plant Total', value: colTotals.makkahPlant.toLocaleString(), bg: 'bg-[#F43F5E]' },
+                { title: 'Jutt Plant Total', value: colTotals.juttPlant.toLocaleString(), bg: 'bg-[#FACC15]' },
+                { title: 'Borrowed Bottles', value: colTotals.borrowBottles.toLocaleString(), bg: 'bg-[#DC2626]' },
+                { title: 'Fuel Exp. Total', value: `Rs. ${colTotals.fuelExp.toLocaleString()}`, bg: 'bg-[#6B7280]' },
+                { title: 'Other Exp. Total', value: `Rs. ${colTotals.otherExp.toLocaleString()}`, bg: 'bg-[#1F2937]' },
+              ];
+
+              return (
+                <div className="space-y-4">
+                  {/* TOP SECTION: ANALYTICS & PROGRESS SUMMARY */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-extrabold text-gray-800">Analytics &amp; Progress Summary</h2>
+                      <button
+                        onClick={() => window.print()}
+                        className="bg-[#E85D2A] text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-[#d44e1d] print:hidden"
                       >
-                        <span className="text-gray-600 font-mono">{h.expr}</span>
-                        <span className="font-bold text-[#E85D2A]">= Rs. {Number(h.res).toLocaleString()}</span>
-                      </div>
-                    ))}
+                        <Printer size={14} /> Print Chart
+                      </button>
+                    </div>
+
+                    {/* 9 Color-Coded Live Total Cards (3 Rows x 3 Columns) */}
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
+                      {summaryCards.map((card) => (
+                        <div key={card.title} className={`${card.bg} text-white rounded-lg py-1.5 px-2 sm:py-2.5 sm:px-3 shadow-sm`}>
+                          <p className="text-[10px] sm:text-xs font-medium opacity-90 leading-tight truncate">{card.title}</p>
+                          <p className="text-sm sm:text-xl font-bold mt-0.5 leading-none truncate">{card.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+
+
+
+
+
+                  {/* BOTTOM SECTION: MONTHLY LOG CHART TABLE */}
+                  <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-5 border border-gray-200 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Table2 className="text-[#E85D2A]" size={20} />
+                      <h3 className="text-base font-extrabold text-gray-900">Monthly Log Chart</h3>
+                    </div>
+
+                    {/* < Prev | November 2026 | Next > Switcher */}
+                    <div className="flex items-center justify-center gap-6 py-1">
+                      <button onClick={() => changeMonth(-1)} className="px-3.5 py-1.5 border rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50">
+                        &lt; Prev
+                      </button>
+                      <span className="text-lg font-extrabold text-[#2563EB] min-w-[160px] text-center">
+                        {monthNames[logMonthIdx]} {logYear}
+                      </span>
+                      <button onClick={() => changeMonth(1)} className="px-3.5 py-1.5 border rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50">
+                        Next &gt;
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto border border-gray-200 rounded-xl max-h-[70vh]">
+                      <table className="w-full text-[10px] sm:text-xs text-center border-collapse min-w-[540px] sm:min-w-[900px]">
+                        <thead className="sticky top-0 z-10 text-white font-bold uppercase">
+                          <tr>
+                            <th className="bg-[#1F2937] py-2 px-1.5 sm:py-3 sm:px-3 border-r border-gray-600 sticky left-0 z-20 whitespace-nowrap">DATE</th>
+                            {columns.map((col) => (
+                              <th key={col.key} className={`${col.bg} py-2 px-1 sm:py-3 sm:px-2.5 border-r border-white/20 leading-tight min-w-[56px] sm:min-w-[90px]`}>
+                                {col.label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {daysArray.map((day) => {
+                            const isToday = isCurrentMonth && day === todayDay;
+                            return (
+                              <tr key={day} className={isToday ? 'bg-[#FEF9C3]' : 'hover:bg-gray-50'}>
+                                <td className={`py-1.5 px-1.5 sm:py-2 sm:px-3 font-bold text-gray-700 border-r border-gray-200 sticky left-0 whitespace-nowrap ${isToday ? 'bg-[#FEF9C3]' : 'bg-white'}`}>
+                                  Day {day}
+                                </td>
+                                {columns.map((col) => {
+                                  const val = currentMonthData[day]?.[col.key] ?? 0;
+                                  return (
+                                    <td key={col.key} className="border-r border-gray-200 p-0">
+                                      <input
+                                        type="number"
+                                        value={val === 0 ? '' : val}
+                                        placeholder="0"
+                                        onChange={(e) => updateLogCell(monthKey, day, col.key, e.target.value)}
+                                        className={`w-full text-center py-1.5 sm:py-2 px-0.5 sm:px-1 bg-transparent text-xs font-bold focus:bg-orange-50 focus:outline-none ${val > 0 ? col.text : 'text-gray-400 font-normal'}`}
+                                      />
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot className="sticky bottom-0 bg-gray-100 font-extrabold text-gray-900 border-t-2 border-gray-300">
+                          <tr>
+                            <td className="py-2 px-1.5 sm:py-2.5 sm:px-3 border-r border-gray-300 sticky left-0 bg-gray-100">TOTAL</td>
+                            {columns.map((col) => (
+                              <td key={col.key} className={`py-2 px-1 sm:py-2.5 sm:px-2 border-r border-gray-300 ${col.text}`}>
+                                {colTotals[col.key].toLocaleString()}
+                              </td>
+                            ))}
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+
                   </div>
                 </div>
-              )}
-            </div>
-          )
-        }
+              );
+            })()
+          }
+          {/* 9. 30 DAYS CUSTOMERS ENTRY SHEET (Exact Match to Picture 1) */ }
+          {
+            activeView === 'customers-sheet' && (() => {
+              const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+              const monthKey = `${sheetYear}-${String(sheetMonthIdx + 1).padStart(2, '0')}`;
+              const daysInMonth = new Date(sheetYear, sheetMonthIdx + 1, 0).getDate();
+              const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
-        {/* 7. UPGRADED ALL BACKUPS (Auto-Sync Status + JSON Backup/Restore + Excel CSV Export) */}
-        {
-          activeView === 'backups' && (
-            <div className="max-w-2xl mx-auto space-y-5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold">All Backups & Data Safety — {currentBiz}</h2>
-                <span className="text-xs bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full">
-                  ● Auto-Sync Active
-                </span>
-              </div>
+              const currentSheetData = sheetGridData[monthKey] || {};
 
-              {/* Live Record Count Summary */}
-              <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                <p className="text-xs font-bold text-gray-400 uppercase mb-3">Saved Records in Database</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                  <div className="bg-[#FDF6F0] p-3 rounded-xl">
-                    <p className="text-2xl font-extrabold text-[#E85D2A]">{parties.length}</p>
-                    <p className="text-xs font-semibold text-gray-600 mt-0.5">Parties</p>
-                  </div>
-                  <div className="bg-[#FDF6F0] p-3 rounded-xl">
-                    <p className="text-2xl font-extrabold text-[#E85D2A]">{cashEntries.length}</p>
-                    <p className="text-xs font-semibold text-gray-600 mt-0.5">Cash Entries</p>
-                  </div>
-                  <div className="bg-[#FDF6F0] p-3 rounded-xl">
-                    <p className="text-2xl font-extrabold text-[#E85D2A]">{staffList.length}</p>
-                    <p className="text-xs font-semibold text-gray-600 mt-0.5">Staff Members</p>
-                  </div>
-                  <div className="bg-[#FDF6F0] p-3 rounded-xl">
-                    <p className="text-2xl font-extrabold text-[#E85D2A]">{expenses.length}</p>
-                    <p className="text-xs font-semibold text-gray-600 mt-0.5">Expenses</p>
-                  </div>
-                </div>
-              </div>
+              const changeSheetMonth = (dir) => {
+                let nextM = sheetMonthIdx + dir;
+                let nextY = sheetYear;
+                if (nextM < 0) { nextM = 11; nextY -= 1; }
+                if (nextM > 11) { nextM = 0; nextY += 1; }
+                setSheetMonthIdx(nextM);
+                setSheetYear(nextY);
+              };
 
-              {/* Full Backup Download & Restore Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Download Full Backup */}
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-orange-100 flex flex-col justify-between space-y-4">
-                  <div>
-                    <h3 className="font-bold text-base text-gray-900">1. Download Full Backup</h3>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Apne poore khate ki ek safe copy (.JSON) apne computer ya USB mein download karein.
-                    </p>
-                  </div>
-                  <button
-                    onClick={exportBackup}
-                    className="w-full bg-[#E85D2A] hover:bg-[#d44e1d] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition"
-                  >
-                    <Download size={17} /> Download Backup (.JSON)
-                  </button>
-                </div>
+              // Daily Column Totals (D1, D2, D3...)
+              const dayTotals = {};
+              daysArray.forEach((d) => {
+                dayTotals[d] = sheetCustomers.reduce((sum, cust) => sum + (Number(currentSheetData[cust]?.[d]) || 0), 0);
+              });
 
-                {/* Restore / Upload Backup */}
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-blue-100 flex flex-col justify-between space-y-4">
-                  <div>
-                    <h3 className="font-bold text-base text-gray-900">2. Restore Old Backup</h3>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Purani download ki hui .JSON backup file upload karke apna saara data wapas layein.
-                    </p>
-                  </div>
-                  <label className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition">
-                    <Database size={17} /> Upload & Restore (.JSON)
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={handleRestoreBackup}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              </div>
+              const grandSheetTotal = Object.values(dayTotals).reduce((a, b) => a + b, 0);
 
-              {/* Excel (.CSV) Export Section */}
-              <div className="bg-white p-5 rounded-2xl shadow-sm border border-green-100 space-y-3">
-                <div>
-                  <h3 className="font-bold text-base text-gray-900">3. Export to Microsoft Excel (.CSV)</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Apna Party Khata ya Cash Book seedha Excel sheet mein kholne ke liye download karein.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <button
-                    onClick={exportPartiesExcel}
-                    className="bg-green-600 hover:bg-green-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition"
-                  >
-                    <Download size={15} /> Export Party Khata (Excel)
-                  </button>
-                  <button
-                    onClick={exportCashExcel}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition"
-                  >
-                    <Download size={15} /> Export Cash Book (Excel)
-                  </button>
-                </div>
-              </div>
-            </div>
-          )
-        }
-        {/* 8. MONTHLY LOG CHART + ANALYTICS & PROGRESS SUMMARY */}
-        {
-          activeView === 'monthly-chart' && (() => {
-            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            const monthKey = `${logYear}-${String(logMonthIdx + 1).padStart(2, '0')}`;
-            const daysInMonth = new Date(logYear, logMonthIdx + 1, 0).getDate();
-            const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-            const todayObj = new Date();
-            const isCurrentMonth = todayObj.getFullYear() === logYear && todayObj.getMonth() === logMonthIdx;
-            const todayDay = todayObj.getDate();
-
-            const columns = [
-              { key: 'counterSale', label: 'COUNTER SALE', bg: 'bg-[#0D9488]', text: 'text-emerald-700' },
-              { key: 'hamzaSupplier', label: 'HAMZA SUPPLIER', bg: 'bg-[#1D4ED8]', text: 'text-gray-900' },
-              { key: 'arsalanBhai', label: 'ARSALAN BHAI', bg: 'bg-[#38BDF8]', text: 'text-gray-900' },
-              { key: 'makkahPlant', label: 'MAKKAH PLANT', bg: 'bg-[#F43F5E]', text: 'text-gray-900' },
-              { key: 'juttPlant', label: 'JUTT PLANT', bg: 'bg-[#FACC15] !text-gray-900', text: 'text-gray-900' },
-              { key: 'totalSupply', label: 'TOTAL SUPPLY', bg: 'bg-[#2563EB]', text: 'text-blue-600' },
-              { key: 'borrowBottles', label: 'BORROW BOTTLES', bg: 'bg-[#EF4444]', text: 'text-red-600' },
-              { key: 'fuelExp', label: 'FUEL EXP.', bg: 'bg-[#6B7280]', text: 'text-gray-600' },
-              { key: 'otherExp', label: 'OTHER EXP.', bg: 'bg-[#374151]', text: 'text-gray-800' },
-            ];
-
-            const currentMonthData = logChartData[monthKey] || {};
-
-            const changeMonth = (dir) => {
-              let nextM = logMonthIdx + dir;
-              let nextY = logYear;
-              if (nextM < 0) { nextM = 11; nextY -= 1; }
-              if (nextM > 11) { nextM = 0; nextY += 1; }
-              setLogMonthIdx(nextM);
-              setLogYear(nextY);
-            };
-
-            // Calculate Live Column Totals
-            const colTotals = {};
-            columns.forEach(c => {
-              colTotals[c.key] = daysArray.reduce((sum, d) => sum + (Number(currentMonthData[d]?.[c.key]) || 0), 0);
-            });
-
-            // Summary Cards Configuration (All 9 Cards in 3x3 Grid)
-            const summaryCards = [
-              { title: 'Total Supply', value: colTotals.totalSupply.toLocaleString(), bg: 'bg-[#0284C7]' },
-              { title: 'Total Counter Sales', value: `Rs. ${colTotals.counterSale.toLocaleString()}`, bg: 'bg-[#15803D]' },
-              { title: 'Hamza Supplier Total', value: colTotals.hamzaSupplier.toLocaleString(), bg: 'bg-[#4338CA]' },
-              { title: 'Arsalan Bhai Total', value: colTotals.arsalanBhai.toLocaleString(), bg: 'bg-[#38BDF8]' },
-              { title: 'Makkah Plant Total', value: colTotals.makkahPlant.toLocaleString(), bg: 'bg-[#F43F5E]' },
-              { title: 'Jutt Plant Total', value: colTotals.juttPlant.toLocaleString(), bg: 'bg-[#FACC15]' },
-              { title: 'Borrowed Bottles', value: colTotals.borrowBottles.toLocaleString(), bg: 'bg-[#DC2626]' },
-              { title: 'Fuel Exp. Total', value: `Rs. ${colTotals.fuelExp.toLocaleString()}`, bg: 'bg-[#6B7280]' },
-              { title: 'Other Exp. Total', value: `Rs. ${colTotals.otherExp.toLocaleString()}`, bg: 'bg-[#1F2937]' },
-            ];
-
-            return (
-              <div className="space-y-4">
-                {/* TOP SECTION: ANALYTICS & PROGRESS SUMMARY */}
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-extrabold text-gray-800">Analytics &amp; Progress Summary</h2>
-                    <button
-                      onClick={() => window.print()}
-                      className="bg-[#E85D2A] text-white px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-[#d44e1d] print:hidden"
-                    >
-                      <Printer size={14} /> Print Chart
-                    </button>
-                  </div>
-
-                  {/* 9 Color-Coded Live Total Cards (3 Rows x 3 Columns) */}
-                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
-                    {summaryCards.map((card) => (
-                      <div key={card.title} className={`${card.bg} text-white rounded-lg py-1.5 px-2 sm:py-2.5 sm:px-3 shadow-sm`}>
-                        <p className="text-[10px] sm:text-xs font-medium opacity-90 leading-tight truncate">{card.title}</p>
-                        <p className="text-sm sm:text-xl font-bold mt-0.5 leading-none truncate">{card.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-
-
-
-
-
-                {/* BOTTOM SECTION: MONTHLY LOG CHART TABLE */}
+              return (
                 <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-5 border border-gray-200 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Table2 className="text-[#E85D2A]" size={20} />
-                    <h3 className="text-base font-extrabold text-gray-900">Monthly Log Chart</h3>
+                  {/* Top Header Bar: Title + Month Switcher + Green "+ Add New Customer" Button */}
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg sm:text-xl font-extrabold text-gray-900">
+                      30 Days Customers Entry Sheet
+                    </h2>
+
+                    {/* Dark Month Switcher (< November 2026 >) */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => changeSheetMonth(-1)}
+                        className="px-2.5 py-1.5 border rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-100"
+                      >
+                        &lt;
+                      </button>
+                      <span className="bg-[#4B5563] text-white px-4 py-1.5 rounded-lg text-xs font-bold min-w-[130px] text-center">
+                        {monthNames[sheetMonthIdx]} {sheetYear}
+                      </span>
+                      <button
+                        onClick={() => changeSheetMonth(1)}
+                        className="px-2.5 py-1.5 border rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-100"
+                      >
+                        &gt;
+                      </button>
+                    </div>
+
+                    {/* Green + Add New Customer Button + Print */}
+                    <div className="flex items-center gap-2 print:hidden">
+                      <button
+                        onClick={handleAddSheetCustomer}
+                        className="bg-[#15803D] hover:bg-[#166534] text-white px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition"
+                      >
+                        + Add New Customer
+                      </button>
+                      <button
+                        onClick={() => window.print()}
+                        className="bg-[#E85D2A] hover:bg-[#d44e1d] text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1"
+                      >
+                        <Printer size={14} /> Print
+                      </button>
+                    </div>
                   </div>
 
-                  {/* < Prev | November 2026 | Next > Switcher */}
-                  <div className="flex items-center justify-center gap-6 py-1">
-                    <button onClick={() => changeMonth(-1)} className="px-3.5 py-1.5 border rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50">
-                      &lt; Prev
-                    </button>
-                    <span className="text-lg font-extrabold text-[#2563EB] min-w-[160px] text-center">
-                      {monthNames[logMonthIdx]} {logYear}
-                    </span>
-                    <button onClick={() => changeMonth(1)} className="px-3.5 py-1.5 border rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-50">
-                      Next &gt;
-                    </button>
-                  </div>
-
-                  <div className="overflow-x-auto border border-gray-200 rounded-xl max-h-[70vh]">
-                    <table className="w-full text-[10px] sm:text-xs text-center border-collapse min-w-[540px] sm:min-w-[900px]">
-                      <thead className="sticky top-0 z-10 text-white font-bold uppercase">
+                  <div className="overflow-x-auto border border-gray-300 rounded-xl max-h-[72vh]">
+                    <table className="w-full text-[11px] sm:text-xs text-center border-collapse">
+                      <thead className="sticky top-0 z-20 bg-[#1F2937] text-white font-bold">
                         <tr>
-                          <th className="bg-[#1F2937] py-2 px-1.5 sm:py-3 sm:px-3 border-r border-gray-600 sticky left-0 z-20 whitespace-nowrap">DATE</th>
-                          {columns.map((col) => (
-                            <th key={col.key} className={`${col.bg} py-2 px-1 sm:py-3 sm:px-2.5 border-r border-white/20 leading-tight min-w-[56px] sm:min-w-[90px]`}>
-                              {col.label}
+                          <th className="py-2 px-2 sm:py-3 sm:px-3.5 text-left border-r border-gray-600 sticky left-0 z-30 bg-[#1F2937] min-w-[105px] max-w-[115px] sm:min-w-[165px] sm:max-w-none truncate">
+                            Customer Name
+                          </th>
+                          {daysArray.map((d) => (
+                            <th key={d} className="py-2 px-0.5 sm:py-3 sm:px-2 border-r border-gray-600 min-w-[34px] sm:min-w-[46px]">
+                              D{d}
                             </th>
                           ))}
+                          <th className="py-2 px-1.5 sm:py-3 sm:px-3 bg-[#111827] text-amber-300 min-w-[48px] sm:min-w-[65px]">
+                            TOTAL
+                          </th>
                         </tr>
                       </thead>
+
                       <tbody className="divide-y divide-gray-200">
-                        {daysArray.map((day) => {
-                          const isToday = isCurrentMonth && day === todayDay;
+                        {sheetCustomers.map((cust) => {
+                          const rowTotal = daysArray.reduce((sum, d) => sum + (Number(currentSheetData[cust]?.[d]) || 0), 0);
                           return (
-                            <tr key={day} className={isToday ? 'bg-[#FEF9C3]' : 'hover:bg-gray-50'}>
-                              <td className={`py-1.5 px-1.5 sm:py-2 sm:px-3 font-bold text-gray-700 border-r border-gray-200 sticky left-0 whitespace-nowrap ${isToday ? 'bg-[#FEF9C3]' : 'bg-white'}`}>
-                                Day {day}
+                            <tr key={cust} className="hover:bg-orange-50/40 group">
+                              {/* Dark Charcoal Sticky Customer Name Cell */}
+                              <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-left font-bold text-white bg-[#1F2937] border-r border-gray-600 sticky left-0 z-10 min-w-[105px] max-w-[115px] sm:min-w-[165px] sm:max-w-none">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="truncate">{cust}</span>
+                                  <button
+                                    onClick={() => handleDeleteSheetCustomer(cust)}
+                                    title="Remove Customer"
+                                    className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-[10px] shrink-0 print:hidden"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
                               </td>
-                              {columns.map((col) => {
-                                const val = currentMonthData[day]?.[col.key] ?? 0;
+
+                              {/* D1 to D31 Editable Number Boxes */}
+                              {daysArray.map((d) => {
+                                const val = currentSheetData[cust]?.[d] ?? 0;
                                 return (
-                                  <td key={col.key} className="border-r border-gray-200 p-0">
+                                  <td key={d} className="border-r border-gray-200 p-0.5 bg-gray-50/50">
                                     <input
                                       type="number"
                                       value={val === 0 ? '' : val}
                                       placeholder="0"
-                                      onChange={(e) => updateLogCell(monthKey, day, col.key, e.target.value)}
-                                      className={`w-full text-center py-1.5 sm:py-2 px-0.5 sm:px-1 bg-transparent text-xs font-bold focus:bg-orange-50 focus:outline-none ${val > 0 ? col.text : 'text-gray-400 font-normal'}`}
+                                      onChange={(e) => updateSheetCell(monthKey, cust, d, e.target.value)}
+                                      className={`w-7 sm:w-10 text-center py-0.5 sm:py-1 rounded border border-gray-200 bg-white focus:border-[#E85D2A] focus:outline-none text-[11px] sm:text-xs ${val > 0 ? 'font-bold text-gray-900' : 'text-gray-400'}`}
                                     />
                                   </td>
                                 );
                               })}
+
+                              {/* Row Total for this Customer */}
+                              <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-extrabold text-[#E85D2A] bg-[#FDF6F0]">
+                                {rowTotal}
+                              </td>
                             </tr>
                           );
                         })}
                       </tbody>
-                      <tfoot className="sticky bottom-0 bg-gray-100 font-extrabold text-gray-900 border-t-2 border-gray-300">
+
+                      {/* Sticky Bottom Row: Daily Totals */}
+                      <tfoot className="sticky bottom-0 z-20 bg-[#1F2937] text-white font-extrabold border-t-2 border-gray-500">
                         <tr>
-                          <td className="py-2 px-1.5 sm:py-2.5 sm:px-3 border-r border-gray-300 sticky left-0 bg-gray-100">TOTAL</td>
-                          {columns.map((col) => (
-                            <td key={col.key} className={`py-2 px-1 sm:py-2.5 sm:px-2 border-r border-gray-300 ${col.text}`}>
-                              {colTotals[col.key].toLocaleString()}
+                          <td className="py-2 px-2 sm:py-2.5 sm:px-3.5 text-left border-r border-gray-600 sticky left-0 z-30 bg-[#1F2937] min-w-[105px] max-w-[115px] sm:min-w-[165px] sm:max-w-none">
+                            DAILY TOTAL
+                          </td>
+                          {daysArray.map((d) => (
+                            <td key={d} className="py-2 px-0.5 sm:py-2.5 sm:px-1.5 border-r border-gray-600 text-amber-300">
+                              {dayTotals[d]}
                             </td>
                           ))}
+                          <td className="py-2 px-1.5 sm:py-2.5 sm:px-3 bg-[#15803D] text-white">
+                            {grandSheetTotal}
+                          </td>
                         </tr>
                       </tfoot>
                     </table>
                   </div>
-
                 </div>
-              </div>
-            );
-          })()
-        }
-        {/* 9. 30 DAYS CUSTOMERS ENTRY SHEET (Exact Match to Picture 1) */}
-        {
-          activeView === 'customers-sheet' && (() => {
-            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-            const monthKey = `${sheetYear}-${String(sheetMonthIdx + 1).padStart(2, '0')}`;
-            const daysInMonth = new Date(sheetYear, sheetMonthIdx + 1, 0).getDate();
-            const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-            const currentSheetData = sheetGridData[monthKey] || {};
-
-            const changeSheetMonth = (dir) => {
-              let nextM = sheetMonthIdx + dir;
-              let nextY = sheetYear;
-              if (nextM < 0) { nextM = 11; nextY -= 1; }
-              if (nextM > 11) { nextM = 0; nextY += 1; }
-              setSheetMonthIdx(nextM);
-              setSheetYear(nextY);
-            };
-
-            // Daily Column Totals (D1, D2, D3...)
-            const dayTotals = {};
-            daysArray.forEach((d) => {
-              dayTotals[d] = sheetCustomers.reduce((sum, cust) => sum + (Number(currentSheetData[cust]?.[d]) || 0), 0);
-            });
-
-            const grandSheetTotal = Object.values(dayTotals).reduce((a, b) => a + b, 0);
-
-            return (
-              <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-5 border border-gray-200 space-y-4">
-                {/* Top Header Bar: Title + Month Switcher + Green "+ Add New Customer" Button */}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-lg sm:text-xl font-extrabold text-gray-900">
-                    30 Days Customers Entry Sheet
-                  </h2>
-
-                  {/* Dark Month Switcher (< November 2026 >) */}
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => changeSheetMonth(-1)}
-                      className="px-2.5 py-1.5 border rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-100"
-                    >
-                      &lt;
-                    </button>
-                    <span className="bg-[#4B5563] text-white px-4 py-1.5 rounded-lg text-xs font-bold min-w-[130px] text-center">
-                      {monthNames[sheetMonthIdx]} {sheetYear}
-                    </span>
-                    <button
-                      onClick={() => changeSheetMonth(1)}
-                      className="px-2.5 py-1.5 border rounded-lg text-xs font-bold text-gray-600 hover:bg-gray-100"
-                    >
-                      &gt;
-                    </button>
-                  </div>
-
-                  {/* Green + Add New Customer Button + Print */}
-                  <div className="flex items-center gap-2 print:hidden">
-                    <button
-                      onClick={handleAddSheetCustomer}
-                      className="bg-[#15803D] hover:bg-[#166534] text-white px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition"
-                    >
-                      + Add New Customer
-                    </button>
-                    <button
-                      onClick={() => window.print()}
-                      className="bg-[#E85D2A] hover:bg-[#d44e1d] text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1"
-                    >
-                      <Printer size={14} /> Print
-                    </button>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto border border-gray-300 rounded-xl max-h-[72vh]">
-                  <table className="w-full text-[11px] sm:text-xs text-center border-collapse">
-                    <thead className="sticky top-0 z-20 bg-[#1F2937] text-white font-bold">
-                      <tr>
-                        <th className="py-2 px-2 sm:py-3 sm:px-3.5 text-left border-r border-gray-600 sticky left-0 z-30 bg-[#1F2937] min-w-[105px] max-w-[115px] sm:min-w-[165px] sm:max-w-none truncate">
-                          Customer Name
-                        </th>
-                        {daysArray.map((d) => (
-                          <th key={d} className="py-2 px-0.5 sm:py-3 sm:px-2 border-r border-gray-600 min-w-[34px] sm:min-w-[46px]">
-                            D{d}
-                          </th>
-                        ))}
-                        <th className="py-2 px-1.5 sm:py-3 sm:px-3 bg-[#111827] text-amber-300 min-w-[48px] sm:min-w-[65px]">
-                          TOTAL
-                        </th>
-                      </tr>
-                    </thead>
-
-                    <tbody className="divide-y divide-gray-200">
-                      {sheetCustomers.map((cust) => {
-                        const rowTotal = daysArray.reduce((sum, d) => sum + (Number(currentSheetData[cust]?.[d]) || 0), 0);
-                        return (
-                          <tr key={cust} className="hover:bg-orange-50/40 group">
-                            {/* Dark Charcoal Sticky Customer Name Cell */}
-                            <td className="py-1.5 px-2 sm:py-2 sm:px-3 text-left font-bold text-white bg-[#1F2937] border-r border-gray-600 sticky left-0 z-10 min-w-[105px] max-w-[115px] sm:min-w-[165px] sm:max-w-none">
-                              <div className="flex items-center justify-between gap-1">
-                                <span className="truncate">{cust}</span>
-                                <button
-                                  onClick={() => handleDeleteSheetCustomer(cust)}
-                                  title="Remove Customer"
-                                  className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-[10px] shrink-0 print:hidden"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            </td>
-
-                            {/* D1 to D31 Editable Number Boxes */}
-                            {daysArray.map((d) => {
-                              const val = currentSheetData[cust]?.[d] ?? 0;
-                              return (
-                                <td key={d} className="border-r border-gray-200 p-0.5 bg-gray-50/50">
-                                  <input
-                                    type="number"
-                                    value={val === 0 ? '' : val}
-                                    placeholder="0"
-                                    onChange={(e) => updateSheetCell(monthKey, cust, d, e.target.value)}
-                                    className={`w-7 sm:w-10 text-center py-0.5 sm:py-1 rounded border border-gray-200 bg-white focus:border-[#E85D2A] focus:outline-none text-[11px] sm:text-xs ${val > 0 ? 'font-bold text-gray-900' : 'text-gray-400'}`}
-                                  />
-                                </td>
-                              );
-                            })}
-
-                            {/* Row Total for this Customer */}
-                            <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-extrabold text-[#E85D2A] bg-[#FDF6F0]">
-                              {rowTotal}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-
-                    {/* Sticky Bottom Row: Daily Totals */}
-                    <tfoot className="sticky bottom-0 z-20 bg-[#1F2937] text-white font-extrabold border-t-2 border-gray-500">
-                      <tr>
-                        <td className="py-2 px-2 sm:py-2.5 sm:px-3.5 text-left border-r border-gray-600 sticky left-0 z-30 bg-[#1F2937] min-w-[105px] max-w-[115px] sm:min-w-[165px] sm:max-w-none">
-                          DAILY TOTAL
-                        </td>
-                        {daysArray.map((d) => (
-                          <td key={d} className="py-2 px-0.5 sm:py-2.5 sm:px-1.5 border-r border-gray-600 text-amber-300">
-                            {dayTotals[d]}
-                          </td>
-                        ))}
-                        <td className="py-2 px-1.5 sm:py-2.5 sm:px-3 bg-[#15803D] text-white">
-                          {grandSheetTotal}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </div>
-            );
-          })()}
+              );
+            })()
+          }
       </main >
     </div >
   );
