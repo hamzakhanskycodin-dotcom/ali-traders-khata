@@ -187,7 +187,7 @@ export default function App() {
     if (d.stockItems) { setStockItems(d.stockItems); localStorage.setItem('dk_items', JSON.stringify(d.stockItems)); }
   };
 
-   // Helper: Push current local state to Supabase Cloud
+  // Helper: Push current local state to Supabase Cloud
   const pushAllToCloud = async (userId, payloadOverride = null) => {
     if (!userId || !navigator.onLine) return false;
     try {
@@ -232,7 +232,7 @@ export default function App() {
         setSession(JSON.parse(cachedSessStr));
         setSyncStatus(localStorage.getItem('dk_pending_sync') ? 'Offline (Pending)' : 'Offline Ready');
         setAuthLoading(false);
-      } catch {}
+      } catch { }
     }
 
     supabase.auth.getSession().then(async ({ data: { session: liveSession } }) => {
@@ -362,7 +362,7 @@ export default function App() {
       setAuthLoading(false);
     }
   };
-    const saveToDisk = async (updated = {}) => {
+  const saveToDisk = async (updated = {}) => {
     const nextBusinesses = updated.businesses ?? businesses;
     const nextCurrentBiz = updated.currentBiz ?? currentBiz;
     const nextParties = updated.parties ?? parties;
@@ -445,30 +445,6 @@ export default function App() {
   }, [activeView, selectedPartyId, entryModal]);
 
 
-  useEffect(() => {
-    const loadSharedData = async () => {
-      try {
-        const res = await fetch('/api/khata');
-        const data = await res.json();
-        if (data) {
-          if (data.parties) setParties(data.parties);
-          if (data.cashEntries) setCashEntries(data.cashEntries);
-          if (data.bills) setBills(data.bills);
-          if (data.staffList) setStaffList(data.staffList);
-          if (data.expenses) setExpenses(data.expenses);
-          if (data.logChartData) setLogChartData(data.logChartData);
-          if (data.sheetCustomers) setSheetCustomers(data.sheetCustomers);
-          if (data.sheetGridData) setSheetGridData(data.sheetGridData);
-
-        }
-      } catch { }
-    };
-    loadSharedData();
-    const interval = setInterval(loadSharedData, 2000);
-
-    return () => clearInterval(interval);
-
-  }, []);
 
   // Add or Update Staff Member
   const handleSaveStaff = (e) => {
@@ -827,7 +803,8 @@ export default function App() {
 
   const getPartyBalance = (party) => {
     return (party.entries || []).reduce((sum, e) => {
-      return e.type === 'GAVE' ? sum + e.amt : sum - e.amt;
+      const val = Number(e.amt) || 0;
+      return e.type === 'GAVE' ? sum + val : sum - val;
     }, 0);
   };
 
@@ -835,15 +812,30 @@ export default function App() {
   const handleSaveEntry = (e) => {
     e.preventDefault();
     if (!entryAmt || !selectedPartyId) return;
+
+    let finalAmt = 0;
+    try {
+      const sanitized = String(entryAmt).replace(/[^0-9+\-*/.%]/g, '').replace(/%/g, '/100');
+      finalAmt = sanitized ? Number(Function(`"use strict"; return (${sanitized})`)()) : 0;
+    } catch {
+      finalAmt = Number(entryAmt) || 0;
+    }
+
+    if (!finalAmt || isNaN(finalAmt) || finalAmt <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
+    const cleanAmt = Math.round(finalAmt * 100) / 100;
     const formattedDate = new Date(entryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
     updateParties(parties.map(p => {
-      if (p.id !== selectedPartyId) return p;
+      if (String(p.id) !== String(selectedPartyId)) return p;
       if (editingEntryId) {
         return {
           ...p,
           entries: p.entries.map(ent => ent.id === editingEntryId
-            ? { ...ent, type: entryModal, amt: Number(entryAmt), note: entryNote || (entryModal === 'GAVE' ? 'You Gave' : 'You Got'), date: formattedDate, rawDate: entryDate }
+            ? { ...ent, type: entryModal, amt: cleanAmt, note: entryNote || (entryModal === 'GAVE' ? 'You Gave' : 'You Got'), date: formattedDate, rawDate: entryDate }
             : ent
           )
         };
@@ -851,7 +843,7 @@ export default function App() {
       return {
         ...p,
         entries: [
-          { id: Date.now(), type: entryModal, amt: Number(entryAmt), note: entryNote || (entryModal === 'GAVE' ? 'You Gave' : 'You Got'), date: formattedDate, rawDate: entryDate },
+          { id: Date.now(), type: entryModal, amt: cleanAmt, note: entryNote || (entryModal === 'GAVE' ? 'You Gave' : 'You Got'), date: formattedDate, rawDate: entryDate },
           ...(p.entries || [])
         ]
       };
@@ -1218,7 +1210,7 @@ export default function App() {
     <div className="min-h-screen bg-[#F5F6F8] font-sans text-gray-800">
       {/* Header */}
 
-<header className={`bg-white shadow-sm sticky top-0 z-20 print:hidden ${(activeView === 'party' || activeView === 'expense') ? 'hidden' : ''}`}>
+      <header className={`bg-white shadow-sm sticky top-0 z-20 print:hidden ${(activeView === 'party' || activeView === 'expense') ? 'hidden' : ''}`}>
         <div className="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
           <div className="relative flex items-center gap-3">
             <button
@@ -1692,6 +1684,10 @@ export default function App() {
               };
               const handleDeleteEntry = (entryId) => deleteEntry(entryId);
 
+              const handleDeleteParty = () => {
+                if (activeParty) deleteCustomer(activeParty.id);
+                setIsEditingParty(false);
+              };
 
 
 
