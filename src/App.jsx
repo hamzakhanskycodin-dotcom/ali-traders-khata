@@ -41,7 +41,7 @@ export default function App() {
       setPinError('');
       setActiveView(target);
     } else {
-      setPinError('Ghalat PIN! Dobara koshish karein.');
+      setPinError('Try again!');
     }
   };
   // Change PIN States & Handler
@@ -3963,7 +3963,7 @@ export default function App() {
             </div>
             <div>
               <h3 className="font-bold text-gray-800 text-base">Protected Section</h3>
-              <p className="text-xs text-gray-500 mt-1">Kholne ke liye PIN darj karein (Default: 1234)</p>
+            
             </div>
             <input
               type="password"
