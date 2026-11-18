@@ -14,7 +14,7 @@ export default function App() {
   const [currentBiz, setCurrentBiz] = useState(() => localStorage.getItem('dk_current_biz') || 'Ali Traders');
   const [showBizMenu, setShowBizMenu] = useState(false);
   const [activeView, setActiveView] = useState('home');
-   // PIN Lock States (Session-based: Ek baar unlock hone par poora session khula rahega)
+   // PIN Lock States (session-based: once unlocked, stays open for the whole session)
   const LOCKED_VIEWS = ['cash', 'staff', 'backups', 'monthly-chart'];
   const [lockedTargetView, setLockedTargetView] = useState(null);
   const [pinInput, setPinInput] = useState('');
@@ -56,11 +56,11 @@ export default function App() {
   const handleChangePinSubmit = (e) => {
     e.preventDefault();
     if (oldPinInput !== appPin) {
-      setChangePinMsg('Purana PIN ghalat hai!');
+      setChangePinMsg('Old PIN is incorrect.');
       return;
     }
     if (newPinInput.trim().length < 4) {
-      setChangePinMsg('Naya PIN kam az kam 4 digits ka hona chahiye!');
+      setChangePinMsg('New PIN must be at least 4 digits.');
       return;
     }
     setAppPin(newPinInput.trim());
@@ -69,7 +69,7 @@ export default function App() {
     setNewPinInput('');
     setChangePinMsg('');
     setShowChangePinModal(false);
-    alert('Lock PIN kamyabi se tabdeel ho gaya hai!');
+    alert('Lock PIN changed successfully.');
   };
 
 
@@ -165,8 +165,8 @@ export default function App() {
       phone: '03001234567',
       type: 'Customer',
       entries: [
-        { id: 101, type: 'GAVE', amt: 20000, note: 'Maal udhaar diya', date: '10 Nov 2026', rawDate: '2026-11-10' },
-        { id: 102, type: 'GOT', amt: 5500, note: 'Cash vasooli', date: '12 Nov 2026', rawDate: '2026-11-12' }
+        { id: 101, type: 'GAVE', amt: 20000, note: 'Goods given on credit', date: '10 Nov 2026', rawDate: '2026-11-10' },
+        { id: 102, type: 'GOT', amt: 5500, note: 'Cash received', date: '12 Nov 2026', rawDate: '2026-11-12' }
       ]
     },
     {
@@ -175,7 +175,7 @@ export default function App() {
       phone: '03217654321',
       type: 'Supplier',
       entries: [
-        { id: 201, type: 'GOT', amt: 8200, note: 'Stock khareeda', date: '11 Nov 2026', rawDate: '2026-11-11' }
+        { id: 201, type: 'GOT', amt: 8200, note: 'Stock purchased', date: '11 Nov 2026', rawDate: '2026-11-11' }
       ]
     }
   ]);
@@ -543,7 +543,7 @@ export default function App() {
 
   // Delete Staff Member
   const deleteStaff = (id) => {
-    if (!window.confirm('Kya aap is staff member ko delete karna chahte hain?')) return;
+    if (!window.confirm('Delete this staff member?')) return;
     updateStaff(staffList.filter(s => s.id !== id));
   };
 
@@ -615,7 +615,7 @@ export default function App() {
 
   // Delete a Single Salary Payment Entry from History
   const deleteStaffPayment = (staffId, paymentId) => {
-    if (!window.confirm('Kya aap yeh salary payment entry delete karna chahte hain?')) return;
+    if (!window.confirm('Delete this salary payment entry?')) return;
     updateStaff(staffList.map(s => s.id === staffId
       ? { ...s, payments: (s.payments || []).filter(p => p.id !== paymentId) }
       : s
@@ -664,7 +664,7 @@ export default function App() {
 
   // Delete Expense
   const deleteExpense = (id) => {
-    if (!window.confirm('Kya aap yeh expense delete karna chahte hain?')) return;
+    if (!window.confirm('Delete this expense?')) return;
     updateExpenses(expenses.filter(ex => ex.id !== id));
   };
   // Handle On-Screen Keypad Press in Calculator Module
@@ -707,14 +707,14 @@ export default function App() {
       { id: Date.now(), desc, amt: Number(calcResult), type, date: formattedDate, rawDate: todayRaw },
       ...cashEntries
     ]);
-    alert(`Rs. ${Number(calcResult).toLocaleString()} Cash Book (${type === 'IN' ? 'Cash In' : 'Cash Out'}) mein save ho gaya!`);
+    alert(`Rs. ${Number(calcResult).toLocaleString()} saved to the Cash Book (${type === 'IN' ? 'Cash In' : 'Cash Out'}).`);
     setCalcNote('');
   };
 
   // Send Calculator Result Directly to a Party's Khata
   const sendCalcToParty = (type) => {
     if (!calcResult || calcResult <= 0 || !calcTargetParty) {
-      alert('Pehle neeche dropdown se Customer/Supplier select karein!');
+      alert('Please select a customer or supplier from the dropdown below first.');
       return;
     }
     const todayRaw = new Date().toISOString().split('T');
@@ -732,7 +732,7 @@ export default function App() {
       };
     }));
     const pName = parties.find(p => String(p.id) === String(calcTargetParty))?.name || 'Party';
-    alert(`Rs. ${Number(calcResult).toLocaleString()} ${pName} ke khate (${type === 'GAVE' ? 'You Gave' : 'You Got'}) mein save ho gaya!`);
+    alert(`Rs. ${Number(calcResult).toLocaleString()} saved to ${pName}'s ledger (${type === 'GAVE' ? 'You Gave' : 'You Got'}).`);
     setCalcNote('');
   };
   // Restore / Upload Backup from .JSON File
@@ -743,7 +743,7 @@ export default function App() {
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target.result);
-        if (!window.confirm('Kya aap is backup file ka data restore karna chahte hain? Maujooda data is se replace ho jayega.')) return;
+        if (!window.confirm('Restore the data from this backup file? Your current data will be replaced.')) return;
 
         const restoredParties = data.parties || parties;
         const restoredCash = data.cashEntries || cashEntries;
@@ -765,9 +765,9 @@ export default function App() {
           expenses: restoredExpenses,
         });
 
-        alert('Mubarak ho! Aapka poora backup data successfully restore ho gaya hai.');
+        alert('Done! Your full backup has been restored successfully.');
       } catch {
-        alert('Ghalat file! Meherbani karke sahi DigiKhata .JSON backup file select karein.');
+        alert('Wrong file. Please select a valid .JSON backup file exported from this app.');
       }
     };
     reader.readAsText(file);
@@ -833,7 +833,7 @@ export default function App() {
 
   // Delete Customer Row from 30 Days Sheet
   const handleDeleteSheetCustomer = (custName) => {
-    if (!window.confirm(`Kya aap "${custName}" ko sheet se hatana chahte hain?`)) return;
+    if (!window.confirm(`Remove "${custName}" from the sheet?`)) return;
     const updatedList = sheetCustomers.filter(c => c !== custName);
     setSheetCustomers(updatedList);
     localStorage.setItem('dk_sheet_customers', JSON.stringify(updatedList));
@@ -925,13 +925,13 @@ export default function App() {
 
   // Delete Single Entry
   const deleteEntry = (entryId) => {
-    if (!window.confirm('Kya aap yeh entry delete karna chahte hain?')) return;
+    if (!window.confirm('Delete this entry?')) return;
     updateParties(parties.map(p => p.id === selectedPartyId ? { ...p, entries: p.entries.filter(e => e.id !== entryId) } : p));
   };
 
   // Delete Entire Customer/Party
   const deleteCustomer = (partyId) => {
-    if (!window.confirm('Kya aap is customer aur iska poora khata delete karna chahte hain?')) return;
+    if (!window.confirm('Delete this customer and their entire ledger?')) return;
     updateParties(parties.filter(p => p.id !== partyId));
     setSelectedPartyId(null);
   };
@@ -1024,7 +1024,7 @@ export default function App() {
 
   // Delete Cash Entry
   const deleteCash = (id) => {
-    if (!window.confirm('Kya aap yeh cash entry delete karna chahte hain?')) return;
+    if (!window.confirm('Delete this cash entry?')) return;
     updateCash(cashEntries.filter(c => c.id !== id));
   };
 
@@ -1322,7 +1322,7 @@ export default function App() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (!window.confirm(`Kya aap "${biz}" business delete karna chahte hain?`)) return;
+                            if (!window.confirm(`Delete the business "${biz}"?`)) return;
                             const updatedList = businesses.filter((b) => b !== biz);
                             setBusinesses(updatedList);
                             const nextBiz = currentBiz === biz ? updatedList[0] : currentBiz;
@@ -1670,7 +1670,7 @@ export default function App() {
                   {/* Parties List with Circular Initials Avatars (Exact Match to Picture 2) */}
                   <div className="mt-3 bg-white divide-y divide-gray-100 border-t border-b border-gray-100">
                     {filteredParties.length === 0 ? (
-                      <p className="p-8 text-center text-gray-400 text-sm">Koi customer ya supplier nahi mila.</p>
+                      <p className="p-8 text-center text-gray-400 text-sm">No customer or supplier found.</p>
                     ) : (
                       filteredParties.map((p) => {
                         const bal = getPartyBalance(p);
@@ -1909,7 +1909,7 @@ export default function App() {
                     </button>
 
                     <a
-                      href={`sms:${activeParty.phone || ''}?body=${encodeURIComponent(`Assalam-o-Alaikum ${activeParty.name}, aapka balance Rs. ${Math.abs(partyNet).toLocaleString()} hai. - ${currentBiz}`)}`}
+                      href={`sms:${activeParty.phone || ''}?body=${encodeURIComponent(`Dear ${activeParty.name}, your pending balance is Rs. ${Math.abs(partyNet).toLocaleString()}. - ${currentBiz}`)}`}
                       className="bg-white border border-gray-200/80 rounded-2xl py-2.5 px-1 flex flex-col items-center justify-center gap-1 shadow-2xs hover:bg-orange-50/50 transition"
                     >
                       <Banknote size={18} className="text-[#E85D2A]" />
@@ -1978,7 +1978,7 @@ export default function App() {
                     </div>
 
                     {displayEntries.length === 0 ? (
-                      <p className="p-8 text-center text-gray-400 text-sm">Abhi tak koi entry nahi hai.</p>
+                      <p className="p-8 text-center text-gray-400 text-sm">No entries yet.</p>
                     ) : (
                       <div className="divide-y divide-gray-100">
                         {displayEntries.map((en) => (
@@ -2093,7 +2093,7 @@ export default function App() {
                       onClick={() => {
                         const entryId = selectedEntryPopup.id;
                         setSelectedEntryPopup(null);
-                        deleteEntry(entryId); // <-- Yahan apna exact function naam likhein
+                        deleteEntry(entryId); // <-- put your exact function name here
                       }}
                       className="py-3 rounded-xl bg-red-50 text-red-600 font-bold text-sm hover:bg-red-100 transition flex items-center justify-center gap-2"
                     >
@@ -2515,7 +2515,7 @@ export default function App() {
 
                 <div className="divide-y divide-gray-100">
                   {filteredCash.length === 0 ? (
-                    <p className="p-8 text-center text-gray-400 text-xs">Koi cash entry nahi mili.</p>
+                    <p className="p-8 text-center text-gray-400 text-xs">No cash entries found.</p>
                   ) : (
                     filteredCash.map((c) => (
                       <div
@@ -2683,7 +2683,7 @@ export default function App() {
                             onChange={(e) => setDeductFromCash(e.target.checked)}
                             className="accent-[#E85D2A] w-4 h-4"
                           />
-                          <span>Cash Book (Galla) se bhi minus karein</span>
+                          <span>Also deduct from the Cash Book</span>
                         </label>
                         <div className="flex gap-2">
                           <button type="button" onClick={() => setPayingStaffId(null)} className="px-4 py-2 rounded-xl bg-gray-100 text-sm font-semibold">
@@ -2863,7 +2863,7 @@ export default function App() {
           const handleSaveCalcExpense = () => {
             const finalAmt = evalExpCalc(expCalcExpr);
             if (!finalAmt || finalAmt <= 0 || !selectedExpCat) {
-              alert('Please valid amount enter karein!');
+              alert('Please enter a valid amount.');
               return;
             }
             const now = new Date();
@@ -2975,7 +2975,7 @@ export default function App() {
                           onChange={(e) => setExpDeductCash(e.target.checked)}
                           className="accent-[#B91C1C] w-4 h-4"
                         />
-                        <span>Cash in Hand (Galla) se bhi minus karein</span>
+                        <span>Also deduct from Cash in Hand</span>
                       </label>
                     )}
                   </div>
@@ -3065,7 +3065,7 @@ export default function App() {
                       </button>
                       <div
                         onClick={() => {
-                          const renamed = window.prompt('Category ka naya naam likhein:', selectedExpCat);
+                          const renamed = window.prompt('Enter a new category name:', selectedExpCat);
                           if (renamed && renamed.trim() && renamed.trim() !== selectedExpCat) {
                             const cleanName = renamed.trim();
                             const updated = expenses.map((ex) =>
@@ -3094,7 +3094,7 @@ export default function App() {
                           <button
                             onClick={() => {
                               setShowExpCatMenu(false);
-                              if (window.confirm(`Kya aap "${selectedExpCat}" ki saari entries delete karna chahte hain?`)) {
+                              if (window.confirm(`Delete all entries in "${selectedExpCat}"?`)) {
                                 updateExpenses(expenses.filter((ex) => (ex.category || 'General') !== selectedExpCat));
                                 setSelectedExpCat(null);
                               }
@@ -3139,7 +3139,7 @@ export default function App() {
                 {/* Entries List */}
                 <div className="bg-white rounded-2xl shadow-xs border border-gray-100 divide-y divide-gray-100 overflow-hidden">
                   {displayCatEntries.length === 0 ? (
-                    <p className="p-8 text-center text-gray-400 text-xs">Abhi tak koi expense entry nahi hai.</p>
+                    <p className="p-8 text-center text-gray-400 text-xs">No expense entries yet.</p>
                   ) : (
                     displayCatEntries.map((en) => (
                       <div
@@ -3303,7 +3303,7 @@ export default function App() {
               <div className="bg-white rounded-2xl shadow-xs border border-gray-100 divide-y divide-gray-100 overflow-hidden">
                 {categoryList.length === 0 ? (
                   <p className="p-8 text-center text-gray-400 text-xs">
-                    Abhi tak koi expense category nahi hai. Neeche se add karein!
+                    No expense categories yet. Add one below.
                   </p>
                 ) : (
                   categoryList.map((cat) => {
@@ -3343,7 +3343,7 @@ export default function App() {
               <div className="fixed bottom-4 left-0 right-0 flex justify-center z-30 pointer-events-none">
                 <button
                   onClick={() => {
-                    const newCat = window.prompt('Expense Category ka naam likhein (e.g. Petrol, Labour, Bijli):');
+                    const newCat = window.prompt('Enter an expense category name (e.g. Petrol, Labour, Electricity):');
                     if (newCat && newCat.trim()) {
                       setSelectedExpCat(newCat.trim());
                     }
@@ -3583,7 +3583,7 @@ export default function App() {
                   <div>
                     <h3 className="font-bold text-base text-gray-900">1. Download Full Backup</h3>
                     <p className="text-xs text-gray-500 mt-1">
-                      Apne poore khate ki ek safe copy (.JSON) apne computer ya USB mein download karein.
+                      Save a complete copy (.JSON) of your ledger to your computer or USB drive.
                     </p>
                   </div>
                   <button
@@ -3599,7 +3599,7 @@ export default function App() {
                   <div>
                     <h3 className="font-bold text-base text-gray-900">2. Restore Old Backup</h3>
                     <p className="text-xs text-gray-500 mt-1">
-                      Purani download ki hui .JSON backup file upload karke apna saara data wapas layein.
+                      Upload a previously downloaded .JSON backup file to restore all of your data.
                     </p>
                   </div>
                   <label className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer transition">
@@ -3619,7 +3619,7 @@ export default function App() {
                 <div>
                   <h3 className="font-bold text-base text-gray-900">3. Export to Microsoft Excel (.CSV)</h3>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Apna Party Khata ya Cash Book seedha Excel sheet mein kholne ke liye download karein.
+                    Download your party ledger or cash book to open it directly in Excel.
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -4020,7 +4020,7 @@ export default function App() {
             </div>
             <div>
               <h3 className="font-bold text-gray-800 text-base">Change Lock PIN</h3>
-              <p className="text-xs text-gray-500 mt-1">Purana aur naya PIN darj karein</p>
+              <p className="text-xs text-gray-500 mt-1">Enter your old PIN and a new PIN</p>
             </div>
             <input
               type="password"
@@ -4029,7 +4029,7 @@ export default function App() {
               autoFocus
               value={oldPinInput}
               onChange={(e) => { setOldPinInput(e.target.value); setChangePinMsg(''); }}
-              placeholder="Purana PIN (Old PIN)"
+              placeholder="Old PIN"
               className="w-full border border-gray-300 rounded-xl px-3 py-2 text-center text-base font-bold tracking-widest focus:outline-none focus:border-[#E85D2A]"
             />
             <input
@@ -4038,7 +4038,7 @@ export default function App() {
               maxLength={6}
               value={newPinInput}
               onChange={(e) => { setNewPinInput(e.target.value); setChangePinMsg(''); }}
-              placeholder="Naya PIN (New 4-6 digits)"
+              placeholder="New PIN (4-6 digits)"
               className="w-full border border-gray-300 rounded-xl px-3 py-2 text-center text-base font-bold tracking-widest focus:outline-none focus:border-[#E85D2A]"
             />
             {changePinMsg && <p className="text-xs text-red-600 font-semibold">{changePinMsg}</p>}
