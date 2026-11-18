@@ -1,8 +1,12 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "com.alitraders.khata",
-    "sha256_cert_fingerprints": ["F9:BA:72:63:92:CE:CA:23:9E:A3:EE:88:57:CB:63:2C:DD:21:61:C5:08:A4:2A:DF:F5:10:36:80:A8:42:20:7B"]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.hk_khata.twa",
+      "sha256_cert_fingerprints": [
+        "96:93:D7:75:C4:88:13:DF:23:52:70:ED:C4:07:37:74:CA:1F:EB:F9:B4:AA:AA:0A:49:64:96:08:C6:B4:DE:6F"
+      ]
+    }
   }
-}]
+]
