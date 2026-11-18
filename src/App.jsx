@@ -14,16 +14,16 @@ export default function App() {
   const [currentBiz, setCurrentBiz] = useState(() => localStorage.getItem('dk_current_biz') || 'Ali Traders');
   const [showBizMenu, setShowBizMenu] = useState(false);
   const [activeView, setActiveView] = useState('home');
-  // PIN Lock States for Cash, Staff, Backups, Monthly Chart
+   // PIN Lock States (Session-based: Ek baar unlock hone par poora session khula rahega)
   const LOCKED_VIEWS = ['cash', 'staff', 'backups', 'monthly-chart'];
-
   const [lockedTargetView, setLockedTargetView] = useState(null);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
   const [appPin, setAppPin] = useState(() => localStorage.getItem('dk_app_pin') || '1234');
+  const [isSessionUnlocked, setIsSessionUnlocked] = useState(() => sessionStorage.getItem('dk_pin_unlocked') === 'true');
 
   const handleOpenView = (viewName) => {
-    if (LOCKED_VIEWS.includes(viewName)) {
+    if (LOCKED_VIEWS.includes(viewName) && !isSessionUnlocked) {
       setLockedTargetView(viewName);
       setPinInput('');
       setPinError('');
@@ -36,6 +36,8 @@ export default function App() {
     e.preventDefault();
     if (pinInput === appPin) {
       const target = lockedTargetView;
+      sessionStorage.setItem('dk_pin_unlocked', 'true');
+      setIsSessionUnlocked(true);
       setLockedTargetView(null);
       setPinInput('');
       setPinError('');
@@ -44,6 +46,7 @@ export default function App() {
       setPinError('Try again!');
     }
   };
+
   // Change PIN States & Handler
   const [showChangePinModal, setShowChangePinModal] = useState(false);
   const [oldPinInput, setOldPinInput] = useState('');
